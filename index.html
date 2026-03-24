@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard TikTok Live</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F8F8F7; --surface:#FFFFFF; --surface2:#F2F2F0; --surface3:#E8E8E5;
+  --line:#E0E0DC; --line2:#CBCBC6;
+  --carbon:#1C1C1A; --carbon2:#2E2E2B; --carbon3:#444441;
+  --text:#1C1C1A; --text2:#5A5A56; --muted:#9A9A94;
+  --oxide:#B8432A; --oxide2:#D4573E; --oxide-l:#FAEAE7; --oxide-ll:#F5D0C8;
+  --pos:#2D6A3F; --pos-l:#E8F5EC;
+  --neg:#8B2020; --neg-l:#F5EAEA;
+  --neu:#4A5568; --neu-l:#EDF2F7;
+  --warn:#7A5C1E; --warn-l:#F5EDD6;
+  --font-serif:'EB Garamond',serif;
+  --font-sans:'Jost',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:13px;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-weight:400;line-height:1.5;min-height:100vh;}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;transition:opacity 0.4s;}
+#loading.hidden{opacity:0;pointer-events:none;}
+#loading .lo-bar{width:140px;height:1px;background:var(--line);}
+#loading .lo-fill{height:100%;background:var(--oxide);width:0%;animation:lp 2s ease-out forwards;}
+@keyframes lp{0%{width:0}60%{width:70%}100%{width:96%}}
+#loading .lo-msg{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--carbon);padding:6px 28px;display:flex;align-items:center;justify-content:space-between;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+.live-row{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,0.4);}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#6fba5e;animation:blink 2.5s ease-in-out infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 28px 12px;display:flex;align-items:center;justify-content:space-between;}
+.logo-img{height:22px;width:auto;display:block;filter:brightness(0);}
+.brand-sub{font-size:9px;letter-spacing:0.26em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-top:3px;}
+
+/* ── BOTONES ── */
+.btn{background:var(--carbon);color:#fff;border:none;padding:8px 18px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.17em;text-transform:uppercase;font-weight:500;cursor:pointer;border-radius:0;transition:background 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--carbon2);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line2);}
+.btn.secondary:hover{background:var(--surface2);}
+.btn.accent{background:var(--oxide);}
+.btn.accent:hover{background:var(--oxide2);}
+.spin{animation:spin 1s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LAYOUT ── */
+main{max-width:1300px;margin:0 auto;padding:0 28px 60px;}
+.sec{border-top:1px solid var(--line);padding-top:20px;margin-top:20px;}
+.sec-lbl{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--line);}
+.sec-title{font-family:var(--font-serif);font-size:22px;font-weight:600;color:var(--text);}
+
+/* ── UPDATE BAR ── */
+.update-bar{margin:14px 0 0;background:var(--surface);border:1px solid var(--line);padding:9px 14px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);}
+.update-bar .info-icon{color:var(--oxide);font-size:13px;flex-shrink:0;}
+
+/* ── KPI ROW ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:18px 0 0;}
+.kpi{background:var(--surface);padding:14px 16px 12px;}
+.kpi.accent-card{background:var(--carbon);}
+.kpi.oxide-card{background:var(--oxide);}
+.kl{font-size:8.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:6px;}
+.kpi.accent-card .kl{color:rgba(255,255,255,0.45);}
+.kpi.oxide-card .kl{color:rgba(255,255,255,0.6);}
+.kv{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--text);line-height:1;margin-bottom:3px;}
+.kpi.accent-card .kv{color:#fff;}
+.kpi.oxide-card .kv{color:#fff;}
+.kv.neg{color:var(--neg);}
+.ks{font-size:10px;color:var(--text2);}
+.kpi.accent-card .ks,.kpi.oxide-card .ks{color:rgba(255,255,255,0.5);}
+
+/* ── BADGES ── */
+.badge{display:inline-block;font-family:var(--font-sans);font-size:7.5px;font-weight:500;letter-spacing:0.07em;padding:2px 7px;border-radius:0;margin-top:6px;}
+.badge.up  {background:var(--pos-l);color:var(--pos);}
+.badge.ne  {background:var(--neu-l);color:var(--neu);}
+.badge.warn{background:var(--warn-l);color:var(--warn);}
+.badge.dn  {background:var(--neg-l);color:var(--neg);}
+.badge.ox  {background:var(--oxide-ll);color:var(--oxide);}
+
+/* ── CHIPS ── */
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
+.chip{font-family:var(--font-sans);font-size:10px;padding:5px 14px;border:1px solid var(--line2);background:var(--surface);color:var(--text2);cursor:pointer;letter-spacing:0.04em;font-weight:500;transition:all 0.1s;border-radius:0;}
+.chip:hover{border-color:var(--oxide);color:var(--oxide);}
+.chip.active{background:var(--carbon);color:#fff;border-color:var(--carbon);}
+
+/* ── SECTION HEADER ── */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin:18px 0 12px;gap:12px;flex-wrap:wrap;}
+.controls{display:flex;align-items:center;gap:8px;}
+.search-wrap{position:relative;display:flex;align-items:center;}
+.search-wrap .sicon{position:absolute;left:10px;color:var(--muted);font-size:13px;pointer-events:none;}
+.search-input{padding:7px 12px 7px 30px;border:1px solid var(--line2);background:var(--surface);font-family:var(--font-sans);font-size:11px;color:var(--text);width:200px;outline:none;border-radius:0;}
+.search-input::placeholder{color:var(--muted);}
+.search-input:focus{border-color:var(--oxide);}
+
+/* ── TABLE ── */
+.tbl-wrap{border:1px solid var(--line);overflow:hidden;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:640px;}
+thead{background:var(--carbon);}
+thead th{font-family:var(--font-sans);font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.6);padding:10px 14px;text-align:left;font-weight:500;white-space:nowrap;}
+thead th.c-num{text-align:center;}
+thead th.c-price,thead th.c-sale{text-align:right;}
+tbody tr{border-bottom:1px solid var(--line);transition:background 0.12s;}
+tbody tr:hover{background:var(--surface2);}
+tbody tr:nth-child(even){background:var(--surface);}
+tbody td{padding:10px 14px;vertical-align:middle;}
+tbody td.c-num{text-align:center;padding:10px 8px;}
+tbody td.c-price,tbody td.c-sale{text-align:right;white-space:nowrap;}
+tbody tr.total{background:var(--surface3)!important;}
+
+/* ── PROD CELL ── */
+.prod-cell{display:flex;align-items:center;gap:10px;}
+.prod-thumb{width:36px;height:36px;flex-shrink:0;background:var(--surface2);overflow:hidden;border-radius:0;position:relative;}
+.prod-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.prod-placeholder{display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--surface2);}
+.mc{font-family:var(--font-serif);font-size:12.5px;font-weight:600;color:var(--text);}
+.my{font-family:var(--font-sans);font-size:9px;letter-spacing:0.08em;color:var(--muted);display:block;margin-top:1px;}
+
+/* ── STOCK PILLS ── */
+.pill{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-family:var(--font-serif);font-size:13px;font-weight:500;line-height:1;}
+.pill.ok {background:var(--pos-l);color:var(--pos);}
+.pill.low{background:#E8F5EC;color:#4a9a5a;}
+.pill.out{background:var(--neg-l);color:var(--neg);}
+.pill.neg{background:var(--neg-l);color:var(--neg);}
+.pill.na {color:var(--muted);font-size:11px;font-family:var(--font-sans);}
+
+/* ── PRECIO / OFERTA ── */
+.price-base{font-family:var(--font-serif);font-size:12.5px;color:var(--text2);}
+.price-sale{font-family:var(--font-serif);font-size:12.5px;font-weight:600;color:var(--oxide);}
+
+/* ── PRODUCT GROUP ── */
+tr.group-hdr td{background:var(--surface2);border-top:2px solid var(--line2);border-bottom:1px solid var(--line);padding:7px 14px;}
+tr.group-hdr .gh-name{font-family:var(--font-serif);font-size:13px;font-weight:600;color:var(--text);letter-spacing:0.02em;}
+tr.color-row td:first-child{padding-left:22px;}
+tr.section-sep td{background:var(--surface3);height:4px;padding:0;border-top:2px solid var(--line2);}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--line);padding:10px 28px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:0.13em;text-transform:uppercase;color:var(--muted);margin-top:32px;}
+
+@media(max-width:900px){
+  main,header,.topbar,footer{padding-left:16px;padding-right:16px;}
+  .search-input{width:140px;}
+}
+
+@media(max-width:600px){
+  /* Header */
+  header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px 16px;}
+  .logo-img{height:16px;}
+  .btn.accent{width:100%;justify-content:center;}
+
+  /* Main */
+  main{padding:12px 0;}
+  .update-bar{margin:0 16px 12px;font-size:9px;}
+  .sec{margin:0;}
+  .sec-lbl{padding:0 16px;font-size:8px;margin-bottom:8px;}
+
+  /* Table */
+  .tbl-wrap{border-left:none;border-right:none;}
+  table{min-width:0;}
+  thead th{font-size:7px;padding:8px 6px;letter-spacing:0.1em;}
+  thead th:first-child{padding-left:12px;min-width:100px;}
+  tbody td{padding:7px 6px;}
+  tbody td:first-child{padding-left:12px;}
+
+  /* Pills smaller */
+  .pill{width:26px;height:26px;font-size:11px;}
+
+  /* Prod cell */
+  .prod-thumb{width:28px;height:28px;flex-shrink:0;}
+  .prod-cell{gap:6px;}
+  .mc{font-size:11px;}
+  .my{font-size:8px;}
+
+  /* Group header */
+  tr.group-hdr td{padding:6px 12px;}
+  tr.gh-name{font-size:11px;}
+
+  /* Price cols */
+  .price-base,.price-sale{font-size:11px;}
+  tbody td.c-price,tbody td.c-sale{padding-right:8px;}
+
+  /* Footer */
+  footer{flex-direction:column;gap:4px;padding:10px 16px;margin-top:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <img src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610"
+       alt="BALA DI GALA" style="height:18px;width:auto;filter:brightness(0);opacity:0.4;">
+  <div class="lo-bar"><div class="lo-fill"></div></div>
+  <div class="lo-msg">Cargando inventario…</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <img class="logo-img"
+      src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610"
+      alt="BALA DI GALA">
+    <div class="brand-sub">Bodega · Inventario en tiempo real</div>
+    <div style="font-family:var(--font-sans);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--oxide);font-weight:600;margin-top:4px;">Dashboard TikTok Live</div>
+  </div>
+  <button class="btn accent" id="syncBtn" onclick="loadInventory()">
+    <span id="syncIcon">↻</span> Actualizar
+  </button>
+</header>
+
+<main>
+
+  <!-- UPDATE BAR -->
+  <div class="update-bar">
+    <span class="info-icon">ℹ</span>
+    <span id="updateTs">Cargando…</span>
+  </div>
+
+
+  <!-- STOCK SECTION -->
+  <div class="sec">
+    <div class="sec-lbl">Inventario por modelo · Shopify Admin</div>
+
+
+    <div class="tbl-wrap">
+      <table id="stockTable">
+        <thead>
+          <tr id="tableHead">
+            <th style="min-width:220px;">Modelo</th>
+            <th class="c-price">Precio</th>
+            <th class="c-sale">⚡ Oferta Relámpago</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <span>Bala Di Gala · Hand Detail SA de CV</span>
+  <span>Shopify Admin · <span id="footerSync">—</span></span>
+</footer>
+<div style="background:var(--surface);border-top:1px solid var(--line);padding:10px 28px;text-align:center;font-size:8.5px;letter-spacing:0.1em;color:var(--muted);line-height:1.8;">
+  © 2026 Bala Di Gala · Hand Detail SA de CV · Todos los derechos reservados. Este sistema de diseño es propiedad exclusiva de Bala Di Gala. Prohibida su reproducción, distribución o uso fuera de la organización sin autorización expresa por escrito.
+</div>
+
+<script>
+const GROUPED_PRODUCTS = new Set(["PENNY CLOG","PENNY PONY CLOGS","PARKER CLOGS","FRANKIE CLOGS"]);
+
+const PRODUCTS = [
+  {rank:1, cat:"clogs", name:"PENNY CLOG",              grouped:true, query:"PENNY CLOGS",            price:1495, sale:1099, img:"https://cdn.shopify.com/s/files/1/2514/6232/files/PEN1_e207f618-1c9b-44f3-a549-3c769cf34758.jpg?v=1773462343",
+    variantImgs:{"Taupe":"https://cdn.shopify.com/s/files/1/2514/6232/files/PEN1_e207f618-1c9b-44f3-a549-3c769cf34758.jpg","Brown":"https://cdn.shopify.com/s/files/1/2514/6232/files/B1.jpg","Black X Honey":"https://cdn.shopify.com/s/files/1/2514/6232/files/7506652103494_x1_fr_ee5bb9de-0956-42dd-b57f-73c940bca18d.jpg","Negro":"https://cdn.shopify.com/s/files/1/2514/6232/files/PENNYBLACK.jpg","Terracota":"https://cdn.shopify.com/s/files/1/2514/6232/files/web1_210bfce4-e7b3-4a09-8c51-df28f8dc3d4b.jpg","Olivo":"https://cdn.shopify.com/s/files/1/2514/6232/files/webv1.jpg"}},
+  {rank:2, cat:"clogs", name:"PENNY PONY CLOGS",        grouped:true, query:"PENNY PONY CLOGS",        price:2495, sale:1499, img:"https://cdn.shopify.com/s/files/1/2514/6232/files/ponyweb.png?v=1760031613"},
+  {rank:3, cat:"clogs", name:"PARKER CLOGS",            grouped:true, query:"PARKER CLOGS",            price:1495, sale:999,  img:"https://cdn.shopify.com/s/files/1/2514/6232/files/PAR1.jpg?v=1773871366",
+    variantImgs:{"Taupe":"https://cdn.shopify.com/s/files/1/2514/6232/files/PAR1.jpg","Negro":"https://cdn.shopify.com/s/files/1/2514/6232/files/N1.jpg","Brown":"https://cdn.shopify.com/s/files/1/2514/6232/files/C1.jpg"}},
+  {rank:4, cat:"clogs", name:"FRANKIE CLOGS",           grouped:true, query:"FRANKIE CLOGS",           price:1395, sale:1199, img:"https://cdn.shopify.com/s/files/1/2514/6232/files/Piper-beige-1.jpg?v=1773871342",
+    variantImgs:{"Taupe":"https://cdn.shopify.com/s/files/1/2514/6232/files/Piper-beige-1.jpg","Brown":"https://cdn.shopify.com/s/files/1/2514/6232/files/Piper-brown-1.jpg","Black":"https://cdn.shopify.com/s/files/1/2514/6232/files/Piper-black-1.jpg"}},
+  {rank:5, cat:"acc",   name:"ECO PROTECT",             query:"ECO PROTECT",             price:311,  img:"https://cdn.shopify.com/s/files/1/2514/6232/files/eco-protect-1.jpg?v=1747850403"},
+  {rank:6, cat:"flux",  name:"FLUX PONY SNEAKERS",      query:"FLUX PONY SNEAKERS",      price:2097, sale:1299, img:"https://cdn.shopify.com/s/files/1/2514/6232/files/fluxppony2.jpg?v=1749238624"},
+  {rank:7, cat:"flux",  name:"FLUX BABY BLUE SNEAKERS", query:"FLUX BABY BLUE SNEAKERS", price:1895, sale:1199, img:"https://cdn.shopify.com/s/files/1/2514/6232/files/fluxblue1.jpg?v=1749063702"},
+  {rank:8, cat:"flux",  name:"FLUX METALLIC SILVER",    query:"FLUX METALLIC SILVER",    price:2295, sale:999,  img:"https://cdn.shopify.com/s/files/1/2514/6232/files/fluxsilver1.jpg?v=1749268758"},
+  {rank:9, cat:"flux",  name:"FLUX SAND SNEAKERS",      query:"FLUX SAND SNEAKERS",      price:1895, sale:999,  img:"https://cdn.shopify.com/s/files/1/2514/6232/files/fluxsand1.jpg?v=1749231551"},
+];
+
+const FALLBACK = {
+  "PENNY CLOG":      {"Taupe":{"23":166,"24":221,"25":62,"26":61,"27":73,"28":-5,"29":-2},"Brown":{"23":44,"24":49,"25":82,"26":28,"27":0,"28":0,"29":2},"Black X Honey":{"23":-3,"24":0,"25":-1,"26":0,"27":0},"Negro":{"23":39,"24":75,"25":11,"26":23,"27":0,"28":-1,"29":-1},"Terracota":{"23":0,"24":4,"25":0,"26":0,"27":6,"28":0,"29":0},"Olivo":{"23":11,"24":1,"25":-2,"26":-1,"27":-1,"28":-1,"29":3}},
+  "PENNY PONY CLOGS":{"Default":{"23":0,"24":3,"25":1,"26":0,"27":3}},
+  "PARKER CLOGS":    {"Taupe":{"23":1,"24":29,"25":13,"26":11,"27":0,"28":0,"29":0},"Negro":{"23":8,"24":10,"25":13,"26":2,"27":5,"28":5,"29":3},"Brown":{"23":0,"24":3,"25":18,"26":0,"27":0,"28":1,"29":0}},
+  "FRANKIE CLOGS":   {"Taupe":{"23":4,"24":4,"25":0,"26":3,"27":3},"Brown":{"23":1,"24":1,"25":1,"26":3,"27":2},"Black":{"23":2,"24":3,"25":3,"26":-1,"27":-1}},
+  "ECO PROTECT":     {"Default":{"Única":11}},
+  "FLUX PONY SNEAKERS":      {"Default":{"23":4,"24":0,"25":0,"26":3,"27":2}},
+  "FLUX BABY BLUE SNEAKERS": {"Default":{"23":1,"24":1,"25":1,"26":8,"27":6}},
+  "FLUX METALLIC SILVER":    {"Default":{"23":5,"24":0,"25":0,"26":0,"27":3}},
+  "FLUX SAND SNEAKERS":      {"Default":{"23":9,"24":6,"25":6,"26":6,"27":9}},
+};
+
+let INVENTORY = {}, PRODUCT_IMAGES = {}, isSyncing = false;
+let activeCat = "all", showOversell = false, searchTerm = "";
+
+window.addEventListener("DOMContentLoaded", () => {
+  INVENTORY = JSON.parse(JSON.stringify(FALLBACK));
+  try { const c = localStorage.getItem("bdg_product_images"); if (c) PRODUCT_IMAGES = JSON.parse(c); } catch(e) {}
+  render();
+  loadInventory().then(() => document.getElementById("loading").classList.add("hidden"));
+  startAutoRefresh();
+});
+
+const qClass = q => q >= 4 ? "ok" : q >= 1 ? "low" : q === 0 ? "out" : "neg";
+
+function getAllSizes(rows) {
+  const s = new Set();
+  rows.forEach(r => Object.keys(r.sizes).filter(k => k !== "Única").forEach(k => s.add(k)));
+  return [...s].sort((a,b) => { const na=parseInt(a),nb=parseInt(b); return (isNaN(na)||isNaN(nb))?a.localeCompare(b):na-nb; });
+}
+
+function buildRows() {
+  const rows = [];
+  PRODUCTS.filter(p => activeCat === "all" || p.cat === activeCat).forEach(prod => {
+    const cm = INVENTORY[prod.name] || {};
+    const colors = Object.keys(cm);
+    const single = colors.length === 1 && (colors[0] === "Default" || colors[0] === "Única");
+    if (single) {
+      rows.push({ prod, label: prod.name, sizes: cm[colors[0]] || {} });
+    } else {
+      colors.forEach(color => rows.push({ prod, label: prod.name, colorLabel: color, sizes: cm[color] || {} }));
+    }
+  });
+  return rows;
+}
+
+function render() {
+  const rows = buildRows();
+  const allSizes = getAllSizes(rows);
+
+  const thead = document.getElementById("tableHead");
+  while (thead.children.length > 3) thead.removeChild(thead.children[1]);
+  allSizes.forEach(s => {
+    const th = document.createElement("th");
+    th.className = "c-num"; th.textContent = s;
+    thead.insertBefore(th, thead.children[thead.children.length - 2]);
+  });
+
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  const colSpan = allSizes.length + 3; // modelo + sizes + precio + oferta
+
+  const groupedRows = rows.filter(r => r.prod.grouped);
+  const otherRows   = rows.filter(r => !r.prod.grouped);
+
+  function appendRow(row, isColorRow) {
+    const hasOversell = Object.values(row.sizes).some(q => q < 0);
+    if (showOversell && !hasOversell) return;
+    if (searchTerm && !(row.label + " " + (row.colorLabel||"")).toLowerCase().includes(searchTerm.toLowerCase())) return;
+
+    const tr = document.createElement("tr");
+    if (isColorRow) tr.classList.add("color-row");
+
+    if (isColorRow) {
+      tr.innerHTML = `<td><div class="prod-cell" style="padding-left:4px;"><div style="width:36px;flex-shrink:0;"></div><div><span class="my" style="font-size:10px;color:var(--text2);">${row.colorLabel || row.label}</span></div></div></td>`;
+    } else {
+      tr.innerHTML = `
+        <td>
+          <div class="prod-cell">
+            <div class="prod-thumb">${getThumb(row.prod.cat, row.prod.name, row.prod, row.colorLabel)}</div>
+            <div>
+              <div class="mc">${row.label}</div>
+              ${row.colorLabel ? `<span class="my">${row.colorLabel}</span>` : ""}
+            </div>
+          </div>
+        </td>`;
+    }
+
+    allSizes.forEach(s => {
+      const td = document.createElement("td");
+      td.className = "c-num";
+      const q = row.sizes[s];
+      const qDisplay = (q !== undefined && q !== null) ? Math.max(0, q) : null;
+      td.innerHTML = (qDisplay !== null)
+        ? `<span class="pill ${qClass(qDisplay)}">${qDisplay}</span>`
+        : `<span class="pill na">—</span>`;
+      tr.appendChild(td);
+    });
+
+    const tdPrice = document.createElement("td");
+    tdPrice.className = "c-price";
+    tdPrice.innerHTML = row.prod.price
+      ? `<span class="price-base">$${row.prod.price.toLocaleString("es-MX")}</span>`
+      : `<span style="color:var(--muted)">—</span>`;
+    tr.appendChild(tdPrice);
+
+    const tdSale = document.createElement("td");
+    tdSale.className = "c-sale";
+    tdSale.innerHTML = row.prod.sale
+      ? `<span class="price-sale">$${row.prod.sale.toLocaleString("es-MX")}</span>`
+      : `<span style="color:var(--muted)">—</span>`;
+    tr.appendChild(tdSale);
+
+    tbody.appendChild(tr);
+  }
+
+  // Grouped products with product-level header rows
+  let lastGroupName = null;
+  groupedRows.forEach(row => {
+    if (row.prod.name !== lastGroupName) {
+      lastGroupName = row.prod.name;
+      const hasColors = Object.keys(INVENTORY[row.prod.name] || {}).filter(c => c !== "Default").length > 0;
+      if (hasColors) {
+        const hdr = document.createElement("tr");
+        hdr.classList.add("group-hdr");
+        hdr.innerHTML = `<td colspan="${colSpan}"><div class="prod-cell"><div class="prod-thumb">${getThumb(row.prod.cat, row.prod.name, row.prod, null)}</div><div><span class="gh-name">${row.prod.name}</span></div></div></td>`;
+        tbody.appendChild(hdr);
+        // render each color as sub-row
+        groupedRows.filter(r => r.prod.name === row.prod.name).forEach(r => appendRow(r, true));
+        return;
+      }
+    } else {
+      return; // already rendered as sub-rows above
+    }
+    appendRow(row, false);
+  });
+
+  // Section separator
+  if (groupedRows.length > 0 && otherRows.length > 0) {
+    const sep = document.createElement("tr");
+    sep.classList.add("section-sep");
+    sep.innerHTML = `<td colspan="${colSpan}"></td>`;
+    tbody.appendChild(sep);
+  }
+
+  // Other products (non-grouped)
+  otherRows.forEach(row => appendRow(row, false));
+}
+
+function getThumb(cat, name, prod, colorLabel) {
+  const variantBase = colorLabel && prod?.variantImgs?.[colorLabel];
+  const base = (variantBase || PRODUCT_IMAGES[name] || prod?.img || "").split("?")[0];
+  if (base) {
+    return `<img src="${base}?width=72&crop=center" alt="${colorLabel||name}" style="width:36px;height:36px;object-fit:cover;"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="prod-placeholder"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9A94" stroke-width="1.5"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+  }
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A9A94" stroke-width="1.3" stroke-linecap="round"><path d="M3 18 C3 18 4 14 7 13 C9 12.5 11 13 13 12 C15 11 16 9 18 9 C20 9 21 10.5 21 12 C21 14 19 16 17 16.5 L5 18 Z"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
+}
+
+function setCat(cat, el) {
+  activeCat = cat;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  el.classList.add("active");
+  render();
+}
+
+function toggleOversellFilter() {
+  showOversell = !showOversell;
+  document.getElementById("filterLabel").textContent = showOversell ? "▼ Solo Oversell" : "▼ Filtrar";
+  render();
+}
+
+function applySearch() {
+  searchTerm = document.getElementById("searchInput").value;
+  render();
+}
+
+function parseVariants(raw) {
+  const map = {};
+  raw.forEach(r => {
+    const vt = (r.product_variant_title || "Default Title").trim();
+    const q  = Math.round(r.product_variant_inventory_quantity ?? 0);
+    let color = "Default", size = vt;
+    if (vt.includes(" / ")) { const p = vt.split(" / "); color = p[0].trim(); size = p[1].trim(); }
+    else if (vt === "Default Title") { size = "Única"; }
+    const sClean = size.replace(/ PRESALE| LAST CHANCE/gi, "").trim();
+    if (!map[color]) map[color] = {};
+    map[color][sClean] = q;
+  });
+  return map;
+}
+
+async function fetchInventory(titleFilter) {
+  const res = await fetch(`/api/shopify?title=${encodeURIComponent(titleFilter)}`);
+  if (!res.ok) throw new Error(`Shopify ${res.status}`);
+  const data = await res.json();
+  const variants = [];
+  (data.products || []).forEach(p => {
+    (p.variants || []).forEach(v => {
+      variants.push({ product_variant_title: v.title, product_variant_inventory_quantity: v.inventory_quantity ?? 0 });
+    });
+  });
+  return { variants };
+}
+
+async function loadInventory() {
+  if (isSyncing) return;
+  isSyncing = true;
+  const btn  = document.getElementById("syncBtn");
+  const icon = document.getElementById("syncIcon");
+  btn.disabled = true;
+  icon.classList.add("spin");
+  try {
+    const results = await Promise.allSettled(PRODUCTS.map(p => fetchInventory(p.query)));
+    let liveCount = 0;
+    results.forEach((res, i) => {
+      if (res.status === "fulfilled" && res.value?.variants?.length > 0) {
+        INVENTORY[PRODUCTS[i].name] = parseVariants(res.value.variants);
+        liveCount++;
+      } else if (!INVENTORY[PRODUCTS[i].name]) {
+        INVENTORY[PRODUCTS[i].name] = JSON.parse(JSON.stringify(FALLBACK[PRODUCTS[i].name] || {}));
+      }
+    });
+    const ts = new Date().toLocaleString("es-MX", { month:"long", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" });
+    const label = liveCount > 0 ? "Live" : "Cache";
+    document.getElementById("updateTs").textContent = `Actualizado: ${ts}`;
+    document.getElementById("footerSync").textContent = `${label} · ${ts}`;
+  } catch(e) {
+    INVENTORY = JSON.parse(JSON.stringify(FALLBACK));
+    const ts = new Date().toLocaleString("es-MX", { month:"long", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" });
+    document.getElementById("updateTs").textContent = `Actualizado: ${ts} (cache)`;
+    document.getElementById("footerSync").textContent = `Cache · ${ts}`;
+  } finally {
+    isSyncing = false;
+    btn.disabled = false;
+    icon.classList.remove("spin");
+  }
+  render();
+}
+
+let autoRefreshTimeout = null;
+function startAutoRefresh() {
+  if (autoRefreshTimeout) clearTimeout(autoRefreshTimeout);
+  autoRefreshTimeout = setTimeout(async () => { await loadInventory(); startAutoRefresh(); }, 30 * 60 * 1000);
+}
+</script>
+</body>
+</html>
