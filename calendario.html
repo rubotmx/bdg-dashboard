@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BDG · Calendario Live TikTok</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F8F8F7; --surface:#FFFFFF; --surface2:#F2F2F0; --surface3:#E8E8E5;
+  --line:#E0E0DC; --line2:#CBCBC6;
+  --carbon:#1C1C1A; --carbon2:#2E2E2B; --carbon3:#444441;
+  --text:#1C1C1A; --text2:#5A5A56; --muted:#9A9A94;
+  --oxide:#B8432A; --oxide2:#D4573E; --oxide-l:#FAEAE7; --oxide-ll:#F5D0C8;
+  --pos:#2D6A3F; --pos-bg:#E8F5EC;
+  --neg:#8B2020; --neg-bg:#F5EAEA;
+  --font-serif:'EB Garamond',serif;
+  --font-sans:'Jost',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:13px;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--carbon);padding:6px 28px;display:flex;align-items:center;justify-content:space-between;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);}
+.topbar a{color:rgba(255,255,255,0.35);text-decoration:none;cursor:pointer;transition:color .15s;}
+.topbar a:hover{color:#fff;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#8fbe6a;animation:blink 2.5s ease-in-out infinite;display:inline-block;margin-right:5px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 28px 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.logo-img{height:20px;width:auto;filter:brightness(0);}
+.brand-sub{font-size:9px;letter-spacing:0.26em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+.week-nav{display:flex;align-items:center;gap:10px;}
+.week-label{font-family:var(--font-serif);font-size:17px;font-weight:500;min-width:200px;text-align:center;}
+
+/* TABS */
+.tabs{background:var(--surface);border-bottom:1px solid var(--line);padding:0 28px;display:flex;gap:0;}
+.tab-btn{padding:9px 18px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.17em;text-transform:uppercase;font-weight:500;border:none;background:transparent;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--oxide);}
+.tab-btn:hover{color:var(--text);}
+
+/* BUTTONS */
+.btn{background:var(--carbon);color:#fff;border:none;padding:8px 16px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.17em;text-transform:uppercase;font-weight:500;cursor:pointer;border-radius:0;transition:background .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--carbon2);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.accent{background:var(--oxide);}
+.btn.accent:hover{background:var(--oxide2);}
+.btn.ghost{background:transparent;color:var(--text2);border:1px solid var(--line2);}
+.btn.ghost:hover{background:var(--surface2);}
+.btn.danger{background:transparent;color:var(--neg);border:1px solid rgba(139,32,32,.25);}
+.btn.danger:hover{background:var(--neg-bg);}
+.btn.sm{padding:5px 11px;font-size:8px;}
+
+/* MAIN */
+main{max-width:1400px;margin:0 auto;padding:22px 28px 60px;}
+
+/* KPI BAR */
+.kpi-bar{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:20px;overflow-x:auto;}
+.kpi{background:var(--surface);padding:12px 16px 10px;min-width:130px;flex:1;}
+.kpi.dark{background:var(--carbon);}
+.kpi-lbl{font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:4px;}
+.kpi.dark .kpi-lbl{color:rgba(255,255,255,.4);}
+.kpi-val{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--text);line-height:1;}
+.kpi.dark .kpi-val{color:#fff;}
+.kpi-sub{font-size:10px;color:var(--text2);margin-top:3px;}
+.kpi.dark .kpi-sub{color:rgba(255,255,255,.5);}
+
+/* LEGEND */
+.legend{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:9.5px;color:var(--text2);}
+.li{display:flex;align-items:center;gap:6px;}
+.ldot{width:12px;height:12px;border-left:3px solid transparent;}
+
+/* CALENDAR */
+.cal-scroll{overflow-x:auto;}
+.cal-grid{display:grid;grid-template-columns:52px repeat(7, minmax(110px,1fr));border:1px solid var(--line);background:var(--line);gap:1px;min-width:820px;}
+.cal-hdr{background:var(--carbon);padding:8px 6px;text-align:center;font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:400;}
+.cal-hdr.today{background:var(--oxide);}
+.cal-hdr .dn{font-family:var(--font-serif);font-size:18px;font-weight:400;display:block;margin-top:1px;color:#fff;letter-spacing:0;}
+.tc{background:var(--bg);font-size:9px;color:var(--muted);text-align:right;padding:0 6px;height:34px;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:3px;}
+.cell{background:var(--surface);height:34px;cursor:pointer;position:relative;transition:background .07s;}
+.cell.hour{border-top:1px solid var(--line);}
+.cell.peak{background:rgba(184,67,42,.05);}
+.cell.empty:hover,.cell.peak.empty:hover{background:var(--surface2);}
+.cell.preview{background:var(--oxide-ll) !important;}
+.cell.occupied{cursor:default;}
+
+/* SESSION BLOCKS */
+.sblock{position:absolute;left:2px;right:2px;top:1px;border-left:3px solid;z-index:10;padding:5px 7px 4px;cursor:pointer;transition:filter .12s;overflow:hidden;border-radius:0;}
+.sblock:hover{filter:brightness(.93);}
+.sb-name{font-size:9.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-role{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.sb-time{font-size:8px;margin-top:4px;letter-spacing:.04em;opacity:.7;}
+.sb-del{position:absolute;top:3px;right:4px;font-size:11px;opacity:0;cursor:pointer;width:16px;height:16px;display:flex;align-items:center;justify-content:center;transition:.1s;border-radius:50%;}
+.sblock:hover .sb-del{opacity:1;}
+
+/* SUMMARY TABLE */
+.sec{margin-top:22px;}
+.sec-lbl{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--line);}
+.tbl-wrap{border:1px solid var(--line);overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--carbon);}
+thead th{font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,.55);padding:9px 12px;text-align:left;font-weight:400;}
+thead th:not(:first-child){text-align:right;}
+tbody tr{border-bottom:1px solid var(--line);transition:background .1s;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:10px 12px;font-size:12px;}
+tbody td:not(:first-child){text-align:right;font-family:var(--font-serif);font-size:13px;}
+.host-dot{width:10px;height:10px;display:inline-block;margin-right:7px;vertical-align:middle;}
+
+/* HOST FORM (admin tab) */
+.form-box{background:var(--surface);border:1px solid var(--line);padding:16px 18px;margin-bottom:18px;}
+.form-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+.form-field{display:flex;flex-direction:column;gap:5px;min-width:140px;}
+.form-field label{font-size:8.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.form-field input,.form-field select{background:var(--bg);border:1px solid var(--line2);padding:8px 10px;font-family:var(--font-sans);font-size:13px;color:var(--text);border-radius:0;outline:none;width:100%;}
+.form-field input:focus,.form-field select:focus{border-color:var(--oxide);}
+.color-grid{display:flex;gap:6px;flex-wrap:wrap;}
+.color-swatch{width:22px;height:22px;cursor:pointer;border:2px solid transparent;transition:.1s;border-radius:0;}
+.color-swatch.sel{border-color:var(--carbon);outline:1px solid var(--carbon);outline-offset:1px;}
+
+/* HOST CARDS */
+.host-card{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line);transition:background .1s;}
+.host-card:hover{background:var(--surface2);}
+.hc-bar{width:4px;height:32px;flex-shrink:0;}
+.hc-name{font-family:var(--font-serif);font-size:14px;font-weight:500;flex:1;}
+.hc-role{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.hc-stat{font-family:var(--font-serif);font-size:14px;color:var(--oxide);min-width:50px;text-align:right;}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(28,28,26,.5);display:flex;align-items:center;justify-content:center;z-index:300;display:none;padding:20px;}
+.modal.open{display:flex;}
+.modal-card{background:var(--surface);border:1px solid var(--line);width:100%;max-width:400px;max-height:90vh;overflow-y:auto;}
+.modal-hdr{background:var(--carbon);padding:13px 18px;display:flex;justify-content:space-between;align-items:center;}
+.modal-hdr h3{font-family:var(--font-serif);font-size:16px;font-weight:500;color:#fff;}
+.modal-hdr button{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;line-height:1;}
+.modal-hdr button:hover{color:#fff;}
+.modal-body{padding:18px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:8.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:6px;}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;background:var(--bg);border:1px solid var(--line2);padding:9px 11px;font-family:var(--font-sans);font-size:13px;color:var(--text);border-radius:0;outline:none;}
+.modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus{border-color:var(--oxide);}
+.modal-field textarea{resize:vertical;min-height:70px;}
+.modal-footer{border-top:1px solid var(--line);padding:12px 18px;display:flex;justify-content:space-between;gap:8px;}
+
+/* HOST PICKER */
+.host-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.hp-opt{padding:9px 11px;cursor:pointer;border:2px solid var(--line);transition:.12s;display:flex;align-items:center;gap:8px;font-size:12px;}
+.hp-opt:hover{border-color:var(--line2);background:var(--surface2);}
+.hp-opt.sel{border-color:var(--carbon);background:var(--surface2);}
+.hp-dot{width:10px;height:10px;flex-shrink:0;}
+
+/* ALERT */
+.alert{padding:9px 12px;font-size:11px;display:none;margin-bottom:12px;}
+.alert.show{display:block;}
+.alert.ok{background:var(--pos-bg);color:var(--pos);}
+.alert.err{background:var(--neg-bg);color:var(--neg);}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 28px;text-align:center;font-size:8.5px;letter-spacing:.1em;color:var(--muted);}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  main,header,.topbar,footer,.tabs{padding-left:14px;padding-right:14px;}
+  .week-label{font-size:13px;min-width:auto;}
+  header{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span style="display:flex;align-items:center;gap:16px;">
+    <span><div class="live-dot"></div>Bala Di Gala · Calendario Live TikTok</span>
+    <a href="/">← Inventario</a>
+  </span>
+  <span>
+    <span id="topUser" style="color:rgba(255,255,255,.7);margin-right:10px;"></span>
+    <a onclick="logout()">Cerrar sesión</a>
+  </span>
+</div>
+
+<header>
+  <div>
+    <img class="logo-img" src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610" alt="BALA DI GALA">
+    <div class="brand-sub">Programación Semanal · TikTok Live</div>
+  </div>
+  <div class="week-nav">
+    <button class="btn ghost sm" onclick="changeWeek(-1)">← Anterior</button>
+    <div class="week-label" id="weekLabel">—</div>
+    <button class="btn ghost sm" onclick="changeWeek(1)">Siguiente →</button>
+    <button class="btn ghost sm" onclick="goToday()">Hoy</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('cal')" id="tabCal">Calendario</button>
+  <button class="tab-btn" onclick="switchTab('hosts')" id="tabHosts">Anfitrionas</button>
+</div>
+
+<!-- ── VISTA CALENDARIO ── -->
+<div id="viewCal">
+  <main>
+    <!-- KPIs -->
+    <div class="kpi-bar" id="kpiBar"></div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="li"><div class="ldot" style="background:rgba(184,67,42,.07);border-left-color:var(--oxide-ll);"></div>Hora pico TikTok</div>
+      <div class="li"><div class="ldot" style="background:var(--surface2);border-left-color:var(--carbon);"></div>Sesión asignada</div>
+      <div style="color:var(--muted);font-size:9px;letter-spacing:.04em;">Sesiones de 90 min · Clic en slot vacío para crear</div>
+    </div>
+
+    <!-- Calendar grid -->
+    <div class="cal-scroll">
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- Weekly summary -->
+    <div class="sec">
+      <div class="sec-lbl">Resumen de la semana</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Anfitriona</th>
+            <th>Rol</th>
+            <th>Sesiones esta semana</th>
+            <th>Horas esta semana</th>
+            <th>Total sesiones</th>
+          </tr></thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── VISTA ANFITRIONAS ── -->
+<div id="viewHosts" style="display:none;">
+  <main>
+    <div id="hostAlert" class="alert"></div>
+
+    <div id="adminHostSection" style="display:none;">
+      <div class="form-box">
+        <div class="sec-lbl" style="margin-bottom:14px;">Nueva anfitriona / equipo</div>
+        <div class="form-row">
+          <div class="form-field" style="flex:2;">
+            <label>Nombre</label>
+            <input type="text" id="hName" placeholder="Ej. Ana García">
+          </div>
+          <div class="form-field">
+            <label>Rol</label>
+            <select id="hRole">
+              <option value="anfitriona">Anfitriona</option>
+              <option value="backend">Equipo backend</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Color</label>
+            <div class="color-grid" id="colorGrid"></div>
+          </div>
+          <button class="btn accent sm" onclick="addHost()" style="align-self:flex-end;">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-lbl">Anfitrionas</div>
+      <div class="tbl-wrap" id="anfList"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-lbl">Equipo backend</div>
+      <div class="tbl-wrap" id="backList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ── MODAL CREAR/EDITAR SESIÓN ── -->
+<div class="modal" id="sessionModal">
+  <div class="modal-card">
+    <div class="modal-hdr">
+      <h3 id="modalTitle">Nueva sesión</h3>
+      <button onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label>Anfitriona / Persona</label>
+        <div class="host-picker" id="hostPicker"></div>
+      </div>
+      <div class="modal-field">
+        <label>Fecha y hora</label>
+        <input type="text" id="mDateTime" readonly style="background:var(--surface2);color:var(--text2);">
+      </div>
+      <div class="modal-field">
+        <label>Duración</label>
+        <select id="mDuration">
+          <option value="60">60 min — 1 hora</option>
+          <option value="90" selected>90 min — 1.5 horas</option>
+          <option value="120">120 min — 2 horas</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Notas (opcional)</label>
+        <textarea id="mNotes" placeholder="Ej. Colección nueva, promo especial…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn danger sm" id="deleteBtn" onclick="deleteEvent()" style="display:none;">Eliminar sesión</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn ghost sm" onclick="closeModal()">Cancelar</button>
+        <button class="btn accent sm" onclick="saveEvent()" id="saveEvtBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 Bala Di Gala · Hand Detail SA de CV · Todos los derechos reservados</footer>
+
+<script>
+const TOKEN = localStorage.getItem("bdg_token");
+let currentUser = null;
+let hosts = [];
+let events = [];
+let weekStart = getMonday(new Date());
+let editingEventId = null;
+let pendingSlot = null; // {date, time}
+let selectedColor = "#B8432A";
+
+const HOST_COLORS = [
+  "#B8432A","#2D6A3F","#2B5C8A","#7A3F8B","#8B6B2A",
+  "#1C6B6B","#8B2D4A","#4A7A2D","#5A3A8B","#6B2D2D"
+];
+
+const DAYS = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const DAYS_FULL = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+
+// Slots: 10:00 AM – 11:30 PM (each 30 min)
+const SLOTS_START = 10;
+const SLOTS_END   = 23.5;
+const PEAK_HOURS  = [19, 19.5, 20, 20.5, 21, 21.5]; // TikTok peak
+
+// ── AUTH ──────────────────────────────────────────────────────
+(async () => {
+  if (!TOKEN) return (window.location.href = "/login.html");
+  try {
+    const r = await fetch("/auth/me", { headers: { Authorization: "Bearer " + TOKEN } });
+    if (!r.ok) { localStorage.removeItem("bdg_token"); return (window.location.href = "/login.html"); }
+    currentUser = await r.json();
+    document.getElementById("topUser").textContent = currentUser.name;
+    if (currentUser.role === "admin") {
+      document.getElementById("adminHostSection").style.display = "";
+    }
+    initColorGrid();
+    await loadHosts();
+    await loadEvents();
+    renderCalendar();
+    renderKPIs();
+    renderSummary();
+    renderHostLists();
+  } catch(e) { window.location.href = "/login.html"; }
+})();
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function addDays(d, n) {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() + n);
+  return dt;
+}
+
+function fmt(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDisplay(d) {
+  return d.toLocaleDateString("es-MX", {day:"numeric", month:"short"});
+}
+
+function slotToTime(slot) {
+  const h = Math.floor(slot);
+  const m = (slot % 1) * 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function timeToSlot(t) {
+  const [h,m] = t.split(":").map(Number);
+  return h + m/60;
+}
+
+function changeWeek(dir) {
+  weekStart = addDays(weekStart, dir * 7);
+  loadEvents().then(() => { renderCalendar(); renderKPIs(); renderSummary(); });
+}
+
+function goToday() {
+  weekStart = getMonday(new Date());
+  loadEvents().then(() => { renderCalendar(); renderKPIs(); renderSummary(); });
+}
+
+// ── DATA ──────────────────────────────────────────────────────
+async function loadHosts() {
+  const r = await fetch("/api/schedule/hosts", { headers: { Authorization: "Bearer " + TOKEN } });
+  const d = await r.json();
+  hosts = d.hosts || [];
+}
+
+async function loadEvents() {
+  const r = await fetch(`/api/schedule/events?week=${fmt(weekStart)}`, { headers: { Authorization: "Bearer " + TOKEN } });
+  const d = await r.json();
+  events = d.events || [];
+  updateWeekLabel();
+}
+
+function updateWeekLabel() {
+  const end = addDays(weekStart, 6);
+  document.getElementById("weekLabel").textContent =
+    `${fmtDisplay(weekStart)} – ${fmtDisplay(end)}`;
+}
+
+// ── CALENDAR RENDER ───────────────────────────────────────────
+function renderCalendar() {
+  const grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+  const today = fmt(new Date());
+
+  // Header row
+  grid.appendChild(Object.assign(document.createElement("div"), {className:"cal-hdr"}));
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(weekStart, i);
+    const ds = fmt(d);
+    const isToday = ds === today;
+    const isWknd  = i >= 5;
+    const el = document.createElement("div");
+    el.className = "cal-hdr" + (isToday ? " today" : "") + (isWknd && !isToday ? " wknd" : "");
+    el.innerHTML = `${DAYS[i]}<span class="dn">${d.getDate()}</span>`;
+    grid.appendChild(el);
+  }
+
+  // Slots
+  for (let slot = SLOTS_START; slot < SLOTS_END; slot += 0.5) {
+    const isHour   = slot % 1 === 0;
+    const isPeak   = PEAK_HOURS.includes(slot);
+    const timeStr  = slotToTime(slot);
+
+    // Time column
+    const tc = document.createElement("div");
+    tc.className = "tc" + (isHour ? " hour" : "");
+    tc.textContent = isHour ? timeStr : "";
+    grid.appendChild(tc);
+
+    // Day cells
+    for (let i = 0; i < 7; i++) {
+      const d  = addDays(weekStart, i);
+      const ds = fmt(d);
+
+      // Find event starting at this slot
+      const ev = events.find(e => e.date === ds && e.start_time === timeStr);
+      // Is this slot occupied by an event spanning from earlier?
+      const occupied = events.some(e => {
+        if (e.date !== ds) return false;
+        const es = timeToSlot(e.start_time);
+        const ee = es + (e.duration / 60);
+        return slot > es && slot < ee;
+      });
+
+      const cell = document.createElement("div");
+      cell.className = "cell" + (isHour ? " hour" : "") + (isPeak ? " peak" : "");
+
+      if (occupied) {
+        cell.classList.add("occupied");
+      } else if (ev) {
+        // Render session block
+        const heightSlots = ev.duration / 30;
+        const heightPx = heightSlots * 34 + (heightSlots - 1) * 1 - 2;
+        const block = document.createElement("div");
+        block.className = "sblock";
+        const bg = ev.host_color + "22";
+        const border = ev.host_color;
+        const fg = ev.host_color;
+        block.style.cssText = `background:${bg};border-left-color:${border};height:${heightPx}px;`;
+        block.innerHTML = `
+          <div class="sb-name" style="color:${fg};">${ev.host_name}</div>
+          <div class="sb-role" style="color:${fg}80;">${getHostRole(ev.host_name)}</div>
+          <div class="sb-time">${ev.start_time} – ${slotToTime(timeToSlot(ev.start_time) + ev.duration/60)}${ev.notes ? " · " + ev.notes : ""}</div>
+          <div class="sb-del" title="Eliminar" onclick="quickDelete(event,${ev.id})">✕</div>`;
+        block.addEventListener("click", (e) => { if (!e.target.classList.contains("sb-del")) openEditModal(ev); });
+        cell.appendChild(block);
+        cell.classList.add("occupied");
+      } else {
+        cell.classList.add("empty");
+        cell.addEventListener("click", () => openCreateModal(ds, timeStr));
+        // Drag preview on hover
+        cell.addEventListener("mouseenter", () => previewSlot(ds, timeStr, cell));
+        cell.addEventListener("mouseleave", clearPreview);
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+}
+
+let previewCells = [];
+function previewSlot(date, time, startCell) {
+  clearPreview();
+  // Highlight 3 rows (90min default) starting from startCell
+  const allCells = Array.from(document.querySelectorAll(".cell.empty"));
+  const idx = allCells.indexOf(startCell);
+  if (idx < 0) return;
+  for (let i = 0; i < 3 && idx + i*7 < allCells.length; i++) {
+    // Same column only — find cells with same day
+    // Simple: just highlight startCell
+  }
+  startCell.classList.add("preview");
+  previewCells = [startCell];
+}
+function clearPreview() {
+  previewCells.forEach(c => c.classList.remove("preview"));
+  previewCells = [];
+}
+
+function getHostRole(name) {
+  const h = hosts.find(x => x.name === name);
+  return h ? (h.role === "anfitriona" ? "Anfitriona" : "Backend") : "";
+}
+
+// ── KPIs ─────────────────────────────────────────────────────
+function renderKPIs() {
+  const bar = document.getElementById("kpiBar");
+  bar.innerHTML = "";
+  const weekEvts = events;
+  // Total sessions this week
+  const kpis = [
+    {lbl:"Sesiones esta semana", val: weekEvts.length, sub:"programadas"},
+    {lbl:"Horas programadas", val: (weekEvts.reduce((a,e)=>a+e.duration,0)/60).toFixed(1)+"h", sub:"en total"},
+  ];
+  hosts.filter(h=>h.role==="anfitriona").forEach(h => {
+    const n = weekEvts.filter(e=>e.host_name===h.name).length;
+    kpis.push({lbl:h.name, val:n, sub:"sesión" + (n!==1?"es":""), color:h.color});
+  });
+  kpis.forEach((k,i) => {
+    const el = document.createElement("div");
+    el.className = "kpi" + (i<2?" dark":"");
+    el.innerHTML = `<div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-val" style="${k.color?`color:${k.color};`:""}">${k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>`;
+    bar.appendChild(el);
+  });
+}
+
+// ── SUMMARY TABLE ────────────────────────────────────────────
+async function renderSummary() {
+  // Get all events (not just this week) for totals
+  const rAll = await fetch("/api/schedule/events", { headers: { Authorization: "Bearer " + TOKEN }});
+  const dAll = await rAll.json();
+  const allEvts = dAll.events || [];
+
+  const tbody = document.getElementById("summaryBody");
+  if (!hosts.length) { tbody.innerHTML = `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--muted);">Sin anfitrionas registradas</td></tr>`; return; }
+
+  tbody.innerHTML = hosts.map(h => {
+    const weekSessions = events.filter(e=>e.host_name===h.name).length;
+    const weekHours    = (events.filter(e=>e.host_name===h.name).reduce((a,e)=>a+e.duration,0)/60).toFixed(1);
+    const totalSessions= allEvts.filter(e=>e.host_name===h.name).length;
+    return `<tr>
+      <td><span class="host-dot" style="background:${h.color};"></span><strong>${h.name}</strong></td>
+      <td style="text-align:left;font-size:11px;color:var(--text2);">${h.role==="anfitriona"?"Anfitriona":"Backend"}</td>
+      <td>${weekSessions}</td>
+      <td>${weekHours}h</td>
+      <td>${totalSessions}</td>
+    </tr>`;
+  }).join("") + `<tr style="background:var(--surface3);font-weight:600;">
+    <td colspan="2">Total</td>
+    <td>${events.length}</td>
+    <td>${(events.reduce((a,e)=>a+e.duration,0)/60).toFixed(1)}h</td>
+    <td>${allEvts.length}</td>
+  </tr>`;
+}
+
+// ── HOST LISTS ────────────────────────────────────────────────
+function renderHostLists() {
+  const anf  = hosts.filter(h=>h.role==="anfitriona");
+  const back = hosts.filter(h=>h.role==="backend");
+  document.getElementById("anfList").innerHTML  = renderHostGroup(anf);
+  document.getElementById("backList").innerHTML = renderHostGroup(back);
+}
+
+function renderHostGroup(list) {
+  if (!list.length) return `<div style="padding:16px;text-align:center;color:var(--muted);font-size:11px;">Sin registros</div>`;
+  return list.map(h => `
+    <div class="host-card">
+      <div class="hc-bar" style="background:${h.color};"></div>
+      <div style="flex:1;">
+        <div class="hc-name">${h.name}</div>
+        <div class="hc-role">${h.role==="anfitriona"?"Anfitriona":"Backend"}</div>
+      </div>
+      <div class="hc-stat">${events.filter(e=>e.host_name===h.name).length} sesiones</div>
+      ${currentUser&&currentUser.role==="admin"?`<button class="btn danger sm" onclick="deleteHost(${h.id},'${h.name}')">Eliminar</button>`:""}
+    </div>`).join("");
+}
+
+// ── MODAL CREATE ──────────────────────────────────────────────
+function openCreateModal(date, time) {
+  editingEventId = null;
+  pendingSlot = {date, time};
+  document.getElementById("modalTitle").textContent = "Nueva sesión";
+  document.getElementById("mDateTime").value = `${formatDateFull(date)} · ${time}`;
+  document.getElementById("mDuration").value = "90";
+  document.getElementById("mNotes").value = "";
+  document.getElementById("deleteBtn").style.display = "none";
+  renderHostPicker(null);
+  document.getElementById("sessionModal").classList.add("open");
+}
+
+function openEditModal(ev) {
+  editingEventId = ev.id;
+  pendingSlot = {date: ev.date, time: ev.start_time};
+  document.getElementById("modalTitle").textContent = "Editar sesión";
+  document.getElementById("mDateTime").value = `${formatDateFull(ev.date)} · ${ev.start_time}`;
+  document.getElementById("mDuration").value = ev.duration;
+  document.getElementById("mNotes").value = ev.notes || "";
+  document.getElementById("deleteBtn").style.display = "";
+  renderHostPicker(ev.host_id || null, ev.host_name);
+  document.getElementById("sessionModal").classList.add("open");
+}
+
+function renderHostPicker(selectedId, fallbackName) {
+  const picker = document.getElementById("hostPicker");
+  picker.innerHTML = hosts.map(h => `
+    <div class="hp-opt ${(h.id===selectedId||(fallbackName&&h.name===fallbackName))?"sel":""}" onclick="selectHost(this,${h.id})">
+      <div class="hp-dot" style="background:${h.color};"></div>
+      <span>${h.name}</span>
+    </div>`).join("") || `<div style="color:var(--muted);font-size:11px;padding:8px;">Sin anfitrionas. Agrégalas primero.</div>`;
+}
+
+function selectHost(el, id) {
+  document.querySelectorAll(".hp-opt").forEach(e=>e.classList.remove("sel"));
+  el.classList.add("sel");
+}
+
+function getSelectedHostId() {
+  const sel = document.querySelector(".hp-opt.sel");
+  if (!sel) return null;
+  return parseInt(sel.getAttribute("onclick").match(/\d+/)[0]);
+}
+
+function closeModal() {
+  document.getElementById("sessionModal").classList.remove("open");
+  editingEventId = null;
+  pendingSlot = null;
+}
+
+async function saveEvent() {
+  const hostId = getSelectedHostId();
+  if (!hostId) return alert("Selecciona una anfitriona");
+  const host = hosts.find(h=>h.id===hostId);
+  if (!host) return;
+  const btn = document.getElementById("saveEvtBtn");
+  btn.disabled = true;
+  try {
+    const body = {
+      host_id: host.id,
+      host_name: host.name,
+      host_color: host.color,
+      date: pendingSlot.date,
+      start_time: pendingSlot.time,
+      duration: parseInt(document.getElementById("mDuration").value),
+      notes: document.getElementById("mNotes").value.trim()
+    };
+    let r;
+    if (editingEventId) {
+      r = await fetch(`/api/schedule/events/${editingEventId}`, {
+        method:"PUT", headers:{"Content-Type":"application/json","Authorization":"Bearer "+TOKEN},
+        body: JSON.stringify(body)
+      });
+    } else {
+      r = await fetch("/api/schedule/events", {
+        method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+TOKEN},
+        body: JSON.stringify(body)
+      });
+    }
+    if (r.ok) {
+      closeModal();
+      await loadEvents();
+      renderCalendar(); renderKPIs(); renderSummary();
+    }
+  } finally { btn.disabled = false; }
+}
+
+async function deleteEvent() {
+  if (!editingEventId) return;
+  if (!confirm("¿Eliminar esta sesión?")) return;
+  await fetch(`/api/schedule/events/${editingEventId}`, {
+    method:"DELETE", headers:{"Authorization":"Bearer "+TOKEN}
+  });
+  closeModal();
+  await loadEvents();
+  renderCalendar(); renderKPIs(); renderSummary();
+}
+
+async function quickDelete(e, id) {
+  e.stopPropagation();
+  if (!confirm("¿Eliminar esta sesión?")) return;
+  await fetch(`/api/schedule/events/${id}`, {
+    method:"DELETE", headers:{"Authorization":"Bearer "+TOKEN}
+  });
+  await loadEvents();
+  renderCalendar(); renderKPIs(); renderSummary();
+}
+
+// ── HOSTS MANAGEMENT ────────────────────────────────────────
+function initColorGrid() {
+  const grid = document.getElementById("colorGrid");
+  if (!grid) return;
+  HOST_COLORS.forEach((c,i) => {
+    const el = document.createElement("div");
+    el.className = "color-swatch" + (i===0?" sel":"");
+    el.style.background = c;
+    el.dataset.color = c;
+    el.onclick = () => {
+      document.querySelectorAll(".color-swatch").forEach(s=>s.classList.remove("sel"));
+      el.classList.add("sel");
+      selectedColor = c;
+    };
+    grid.appendChild(el);
+  });
+  selectedColor = HOST_COLORS[0];
+}
+
+async function addHost() {
+  const name = document.getElementById("hName").value.trim();
+  const role = document.getElementById("hRole").value;
+  if (!name) return;
+  const r = await fetch("/api/schedule/hosts", {
+    method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+TOKEN},
+    body: JSON.stringify({name, role, color: selectedColor})
+  });
+  if (r.ok) {
+    document.getElementById("hName").value = "";
+    const al = document.getElementById("hostAlert");
+    al.textContent = "Anfitriona agregada"; al.className="alert ok show";
+    setTimeout(()=>al.classList.remove("show"),3000);
+    await loadHosts();
+    renderHostLists(); renderHostPicker(null);
+  }
+}
+
+async function deleteHost(id, name) {
+  if (!confirm(`¿Eliminar a ${name}?`)) return;
+  await fetch(`/api/schedule/hosts/${id}`, {
+    method:"DELETE", headers:{"Authorization":"Bearer "+TOKEN}
+  });
+  await loadHosts();
+  renderHostLists();
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function switchTab(t) {
+  document.getElementById("viewCal").style.display   = t==="cal"  ?"":"none";
+  document.getElementById("viewHosts").style.display = t==="hosts"?"":"none";
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById(t==="cal"?"tabCal":"tabHosts").classList.add("active");
+  if (t==="hosts") renderHostLists();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function formatDateFull(dateStr) {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"});
+}
+
+async function logout() {
+  await fetch("/auth/logout",{method:"POST",headers:{Authorization:"Bearer "+TOKEN}});
+  localStorage.removeItem("bdg_token");
+  localStorage.removeItem("bdg_user");
+  window.location.href = "/login.html";
+}
+
+// Close modal with Escape
+document.addEventListener("keydown", e => { if (e.key==="Escape") closeModal(); });
+</script>
+</body>
+</html>

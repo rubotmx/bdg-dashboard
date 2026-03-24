@@ -59,6 +59,26 @@ def init_db():
             expires_at TEXT    NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+        CREATE TABLE IF NOT EXISTS hosts (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            name       TEXT    NOT NULL,
+            role       TEXT    NOT NULL DEFAULT 'anfitriona',
+            color      TEXT    NOT NULL DEFAULT '#B8432A',
+            active     INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS schedule_events (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            host_id    INTEGER,
+            host_name  TEXT    NOT NULL,
+            host_color TEXT    NOT NULL DEFAULT '#B8432A',
+            date       TEXT    NOT NULL,
+            start_time TEXT    NOT NULL,
+            duration   INTEGER NOT NULL DEFAULT 90,
+            notes      TEXT    DEFAULT '',
+            created_by TEXT,
+            created_at TEXT    NOT NULL
+        );
     """)
     # Asegurar que el super admin siempre exista con las credenciales del env
     salt = "bdg_fixed_admin_salt_v2"
@@ -127,6 +147,29 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             ).fetchall()
             conn.close()
             self._json(200, {"users": [dict(r) for r in rows]})
+        elif self.path.startswith("/api/schedule/events"):
+            user = verify_session(self._token())
+            if not user: return self._json(401, {"error": "No autorizado"})
+            qs     = urllib.parse.urlparse(self.path).query
+            params = urllib.parse.parse_qs(qs)
+            week   = params.get("week", [""])[0]  # YYYY-MM-DD (lunes)
+            conn = get_conn()
+            if week:
+                rows = conn.execute(
+                    "SELECT * FROM schedule_events WHERE date >= ? AND date < date(?, '+7 days') ORDER BY date, start_time",
+                    (week, week)
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM schedule_events ORDER BY date, start_time").fetchall()
+            conn.close()
+            self._json(200, {"events": [dict(r) for r in rows]})
+        elif self.path.startswith("/api/schedule/hosts"):
+            user = verify_session(self._token())
+            if not user: return self._json(401, {"error": "No autorizado"})
+            conn = get_conn()
+            rows = conn.execute("SELECT * FROM hosts WHERE active=1 ORDER BY role, name").fetchall()
+            conn.close()
+            self._json(200, {"hosts": [dict(r) for r in rows]})
         else:
             super().do_GET()
 
@@ -143,6 +186,28 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             if not user or user["role"] != "admin":
                 return self._json(403, {"error": "Acceso denegado"})
             self._create_user()
+        elif self.path == "/api/schedule/events":
+            user = verify_session(self._token())
+            if not user: return self._json(401, {"error": "No autorizado"})
+            b = self._body()
+            conn = get_conn()
+            cur = conn.execute(
+                "INSERT INTO schedule_events (host_id, host_name, host_color, date, start_time, duration, notes, created_by, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                (b.get("host_id"), b["host_name"], b.get("host_color","#B8432A"), b["date"], b["start_time"], b.get("duration",90), b.get("notes",""), user["name"], _now())
+            )
+            conn.commit(); conn.close()
+            self._json(201, {"id": cur.lastrowid, "ok": True})
+        elif self.path == "/api/schedule/hosts":
+            user = verify_session(self._token())
+            if not user or user["role"] != "admin": return self._json(403, {"error": "Acceso denegado"})
+            b = self._body()
+            conn = get_conn()
+            cur = conn.execute(
+                "INSERT INTO hosts (name, role, color, active, created_at) VALUES (?,?,?,1,?)",
+                (b["name"], b.get("role","anfitriona"), b.get("color","#B8432A"), _now())
+            )
+            conn.commit(); conn.close()
+            self._json(201, {"id": cur.lastrowid, "ok": True})
         else:
             self.send_response(404); self.end_headers()
 
@@ -154,6 +219,28 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                 return self._json(403, {"error": "Acceso denegado"})
             uid = self.path.rstrip("/").split("/")[-1]
             self._update_user(uid)
+        elif self.path.startswith("/api/schedule/events/"):
+            user = verify_session(self._token())
+            if not user: return self._json(401, {"error": "No autorizado"})
+            eid = self.path.rstrip("/").split("/")[-1]
+            b = self._body()
+            conn = get_conn()
+            for col in ("host_id","host_name","host_color","date","start_time","duration","notes"):
+                if col in b:
+                    conn.execute(f"UPDATE schedule_events SET {col}=? WHERE id=?", (b[col], eid))
+            conn.commit(); conn.close()
+            self._json(200, {"ok": True})
+        elif self.path.startswith("/api/schedule/hosts/"):
+            user = verify_session(self._token())
+            if not user or user["role"] != "admin": return self._json(403, {"error": "Acceso denegado"})
+            hid = self.path.rstrip("/").split("/")[-1]
+            b = self._body()
+            conn = get_conn()
+            for col in ("name","role","color","active"):
+                if col in b:
+                    conn.execute(f"UPDATE hosts SET {col}=? WHERE id=?", (b[col], hid))
+            conn.commit(); conn.close()
+            self._json(200, {"ok": True})
         else:
             self.send_response(404); self.end_headers()
 
@@ -167,6 +254,22 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             conn = get_conn()
             conn.execute("DELETE FROM sessions WHERE user_id=?", (uid,))
             conn.execute("DELETE FROM users WHERE id=? AND username != ?", (uid, ADMIN_USER))
+            conn.commit(); conn.close()
+            self._json(200, {"ok": True})
+        elif self.path.startswith("/api/schedule/events/"):
+            user = verify_session(self._token())
+            if not user: return self._json(401, {"error": "No autorizado"})
+            eid = self.path.rstrip("/").split("/")[-1]
+            conn = get_conn()
+            conn.execute("DELETE FROM schedule_events WHERE id=?", (eid,))
+            conn.commit(); conn.close()
+            self._json(200, {"ok": True})
+        elif self.path.startswith("/api/schedule/hosts/"):
+            user = verify_session(self._token())
+            if not user or user["role"] != "admin": return self._json(403, {"error": "Acceso denegado"})
+            hid = self.path.rstrip("/").split("/")[-1]
+            conn = get_conn()
+            conn.execute("UPDATE hosts SET active=0 WHERE id=?", (hid,))
             conn.commit(); conn.close()
             self._json(200, {"ok": True})
         else:
