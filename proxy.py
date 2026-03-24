@@ -90,6 +90,12 @@ def init_db():
     else:
         conn.execute("INSERT INTO users (username, name, password_hash, salt, role, active, created_at) VALUES (?,?,?,?,?,1,?)",
                      (ADMIN_USER, ADMIN_NAME, pwd_hash, salt, "admin", _now()))
+    # Add color column to users if not exists
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN color TEXT NOT NULL DEFAULT '#B8432A'")
+        conn.commit()
+    except Exception:
+        pass  # column already exists
     conn.commit()
     conn.close()
     print(f"[bdg-auth] DB: {DB_PATH}  |  {ADMIN_USER}")
@@ -167,7 +173,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             user = verify_session(self._token())
             if not user: return self._json(401, {"error": "No autorizado"})
             conn = get_conn()
-            rows = conn.execute("SELECT * FROM hosts WHERE active=1 ORDER BY role, name").fetchall()
+            rows = conn.execute(
+                "SELECT id, name, role, color FROM users WHERE role IN ('anfitriona','backend') AND active=1 ORDER BY role, name"
+            ).fetchall()
             conn.close()
             self._json(200, {"hosts": [dict(r) for r in rows]})
         else:
@@ -365,6 +373,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             conn.execute("UPDATE users SET active=? WHERE id=?", (1 if body["active"] else 0, uid))
         if "name" in body:
             conn.execute("UPDATE users SET name=? WHERE id=?", (body["name"], uid))
+        if "color" in body:
+            conn.execute("UPDATE users SET color=? WHERE id=?", (body["color"], uid))
         conn.commit(); conn.close()
         self._json(200, {"ok": True})
 

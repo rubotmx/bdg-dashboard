@@ -243,30 +243,8 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 2
 <!-- ── VISTA ANFITRIONAS ── -->
 <div id="viewHosts" style="display:none;">
   <main>
-    <div id="hostAlert" class="alert"></div>
-
-    <div id="adminHostSection" style="display:none;">
-      <div class="form-box">
-        <div class="sec-lbl" style="margin-bottom:14px;">Nueva anfitriona / equipo</div>
-        <div class="form-row">
-          <div class="form-field" style="flex:2;">
-            <label>Nombre</label>
-            <input type="text" id="hName" placeholder="Ej. Ana García">
-          </div>
-          <div class="form-field">
-            <label>Rol</label>
-            <select id="hRole">
-              <option value="anfitriona">Anfitriona</option>
-              <option value="backend">Equipo backend</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Color</label>
-            <div class="color-grid" id="colorGrid"></div>
-          </div>
-          <button class="btn accent sm" onclick="addHost()" style="align-self:flex-end;">+ Agregar</button>
-        </div>
-      </div>
+    <div style="background:var(--surface2);border:1px solid var(--line);padding:11px 16px;font-size:11px;color:var(--text2);margin-bottom:18px;">
+      Las anfitrionas y equipo backend aparecen aquí automáticamente cuando se registran y el administrador les asigna su rol en <a href="/admin.html" style="color:var(--oxide);text-decoration:none;">Gestión de usuarios</a>.
     </div>
 
     <div class="sec">
@@ -353,7 +331,6 @@ const PEAK_HOURS  = [19, 19.5, 20, 20.5, 21, 21.5]; // TikTok peak
     currentUser = await r.json();
     document.getElementById("topUser").textContent = currentUser.name;
     if (currentUser.role === "admin") {
-      document.getElementById("adminHostSection").style.display = "";
       document.getElementById("tabHosts").style.display = "";
     }
     if (!["admin","backend","anfitriona"].includes(currentUser.role)) {
