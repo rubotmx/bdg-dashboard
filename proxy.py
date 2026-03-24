@@ -132,6 +132,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/auth/login":
             self._login()
+        elif self.path == "/auth/register":
+            self._register()
         elif self.path == "/auth/logout":
             self._logout()
         elif self.path == "/admin/users":
@@ -191,6 +193,28 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             "user": {"id": row["id"], "username": row["username"],
                      "name": row["name"], "role": row["role"]}
         })
+
+    def _register(self):
+        body = self._body()
+        username = body.get("username", "").strip().lower()
+        name     = body.get("name", "").strip()
+        password = body.get("password", "")
+        if not username or not name or not password:
+            return self._json(400, {"error": "Faltan campos"})
+        if len(password) < 6:
+            return self._json(400, {"error": "La contraseña debe tener al menos 6 caracteres"})
+        salt     = secrets.token_hex(16)
+        pwd_hash = _hash(password, salt)
+        try:
+            conn = get_conn()
+            conn.execute(
+                "INSERT INTO users (username, name, password_hash, salt, role, active, created_at) VALUES (?,?,?,?,?,0,?)",
+                (username, name, pwd_hash, salt, "viewer", _now())
+            )
+            conn.commit(); conn.close()
+            self._json(201, {"ok": True, "message": "Cuenta creada. Espera a que el administrador la apruebe."})
+        except sqlite3.IntegrityError:
+            self._json(409, {"error": "Ese usuario ya existe, elige otro"})
 
     def _logout(self):
         token = self._token()

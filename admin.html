@@ -114,10 +114,29 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 2
   <div class="page-title">Usuarios del sistema</div>
   <div class="page-sub" id="pageSubtitle">Cargando…</div>
 
+  <!-- Pendientes de aprobación -->
+  <div class="sec" id="pendingSection" style="display:none;border-color:var(--oxide);border-width:2px;">
+    <div class="sec-head" style="background:var(--oxide-l,#FAEAE7);">
+      <span class="sec-title" style="color:var(--oxide);">⏳ Pendientes de aprobación</span>
+      <span id="pendingCount" style="font-size:11px;color:var(--oxide);font-weight:600;"></span>
+    </div>
+    <table>
+      <thead style="background:var(--oxide);">
+        <tr>
+          <th>Nombre</th>
+          <th>Usuario</th>
+          <th>Solicitado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="pendingBody"></tbody>
+    </table>
+  </div>
+
   <!-- User list -->
   <div class="sec">
     <div class="sec-head">
-      <span class="sec-title">Usuarios registrados</span>
+      <span class="sec-title">Usuarios activos e inactivos</span>
     </div>
     <div id="alertMsg" class="alert"></div>
     <table>
@@ -200,12 +219,44 @@ async function loadUsers() {
 }
 
 function renderUsers(users) {
+  // Separar pendientes (active=0 y no son admin) de activos/inactivos creados por admin
+  const pending = users.filter(u => u.active === 0 && u.username !== "admin");
+  const rest    = users.filter(u => u.active !== 0 || u.username === "admin");
+
+  // Sección pendientes
+  const pendingSection = document.getElementById("pendingSection");
+  const pendingBody    = document.getElementById("pendingBody");
+  const pendingCount   = document.getElementById("pendingCount");
+  if (pending.length) {
+    pendingSection.style.display = "";
+    pendingCount.textContent = `${pending.length} solicitud${pending.length > 1 ? "es" : ""}`;
+    pendingBody.innerHTML = pending.map(u => `
+      <tr>
+        <td><strong>${u.name}</strong></td>
+        <td style="font-size:11px;color:var(--text2);">${u.username}</td>
+        <td style="font-size:11px;color:var(--muted);">${formatDate(u.created_at)}</td>
+        <td>
+          <div class="actions">
+            <select id="role_${u.id}" style="padding:5px 8px;border:1px solid var(--line2);font-family:var(--font-sans);font-size:11px;background:var(--bg);cursor:pointer;">
+              <option value="viewer">Viewer</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button class="btn accent sm" onclick="approveUser(${u.id})">✓ Aprobar</button>
+            <button class="btn danger sm" onclick="deleteUser(${u.id}, '${u.name}')">Rechazar</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  } else {
+    pendingSection.style.display = "none";
+  }
+
   const tbody = document.getElementById("usersBody");
-  if (!users.length) {
+  if (!rest.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Sin usuarios</td></tr>`;
     return;
   }
-  tbody.innerHTML = users.map(u => `
+  tbody.innerHTML = rest.map(u => `
     <tr>
       <td><strong>${u.name}</strong></td>
       <td style="color:var(--text2);font-size:11px;">${u.username}</td>
@@ -301,6 +352,17 @@ async function saveUser() {
   } finally {
     btn.disabled = false;
   }
+}
+
+async function approveUser(id) {
+  const role = document.getElementById(`role_${id}`)?.value || "viewer";
+  const r = await fetch(`/admin/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN },
+    body: JSON.stringify({ active: true, role })
+  });
+  if (r.ok) { showAlert("Usuario aprobado y activado", "ok"); loadUsers(); }
+  else showAlert("Error al aprobar", "err");
 }
 
 async function toggleActive(id, current) {

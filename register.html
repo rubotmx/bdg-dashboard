@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BDG · Solicitar acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F8F8F7; --surface:#FFFFFF;
+  --line:#E0E0DC; --line2:#CBCBC6;
+  --carbon:#1C1C1A; --carbon2:#2E2E2B;
+  --text:#1C1C1A; --text2:#5A5A56; --muted:#9A9A94;
+  --oxide:#B8432A; --oxide2:#D4573E; --oxide-l:#FAEAE7;
+  --pos:#2D6A3F; --pos-l:#E8F5EC;
+  --neg:#8B2020; --neg-l:#F5EAEA;
+  --font-serif:'EB Garamond',serif;
+  --font-sans:'Jost',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--carbon);padding:6px 28px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);text-align:center;}
+.center{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+.card{background:var(--surface);border:1px solid var(--line);width:100%;max-width:380px;padding:40px 36px 36px;}
+.card-logo{display:block;height:18px;width:auto;filter:brightness(0);margin:0 auto 6px;}
+.card-sub{text-align:center;font-size:8.5px;letter-spacing:0.26em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.card-desc{text-align:center;font-size:11px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:8.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-weight:500;}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--line2);background:var(--bg);font-family:var(--font-sans);font-size:13px;color:var(--text);outline:none;border-radius:0;transition:border-color 0.15s;}
+.field input:focus{border-color:var(--oxide);background:var(--surface);}
+.field .hint{font-size:10px;color:var(--muted);margin-top:5px;}
+.btn{width:100%;background:var(--carbon);color:#fff;border:none;padding:11px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;cursor:pointer;border-radius:0;transition:background 0.2s;margin-top:6px;}
+.btn:hover{background:var(--carbon2);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.alert{font-size:11px;padding:10px 12px;margin-bottom:16px;display:none;line-height:1.5;}
+.alert.show{display:block;}
+.alert.ok{background:var(--pos-l);color:var(--pos);}
+.alert.err{background:var(--neg-l);color:var(--neg);}
+
+/* Estado de éxito */
+.success-state{display:none;text-align:center;}
+.success-state.show{display:block;}
+.success-icon{font-size:36px;margin-bottom:16px;}
+.success-title{font-family:var(--font-serif);font-size:22px;margin-bottom:8px;}
+.success-msg{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px;}
+
+footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 28px;text-align:center;font-size:8.5px;letter-spacing:0.1em;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="topbar">Bala Di Gala · Bodega · Sistema interno</div>
+
+<div class="center">
+  <div class="card">
+    <img class="card-logo"
+      src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610"
+      alt="BALA DI GALA">
+    <div class="card-sub">Solicitar acceso</div>
+    <div class="card-desc">Crea tu cuenta. El administrador la activará antes de que puedas ingresar.</div>
+
+    <!-- Formulario -->
+    <div id="formWrap">
+      <div class="alert" id="alertMsg"></div>
+      <form id="regForm" onsubmit="doRegister(event)">
+        <div class="field">
+          <label>Nombre completo</label>
+          <input type="text" id="name" placeholder="Ej. Ana García" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label>Usuario</label>
+          <input type="text" id="username" placeholder="ana.garcia" required autocapitalize="none" autocomplete="username">
+          <div class="hint">Solo letras, números y puntos. Sin espacios.</div>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="password" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Confirmar contraseña</label>
+          <input type="password" id="password2" placeholder="Repite tu contraseña" required autocomplete="new-password">
+        </div>
+        <button class="btn" type="submit" id="regBtn">Solicitar acceso</button>
+      </form>
+      <div style="margin-top:18px;text-align:center;font-size:11px;color:var(--muted);">
+        ¿Ya tienes cuenta?
+        <a href="/login.html" style="color:var(--oxide);text-decoration:none;font-weight:500;">Ingresar</a>
+      </div>
+    </div>
+
+    <!-- Estado de éxito -->
+    <div class="success-state" id="successWrap">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Solicitud enviada</div>
+      <div class="success-msg">
+        Tu cuenta fue creada y está pendiente de aprobación.<br>
+        El administrador te dará acceso en breve.
+      </div>
+      <a href="/login.html" class="btn" style="display:block;text-decoration:none;text-align:center;">Ir al login</a>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 Bala Di Gala · Hand Detail SA de CV · Todos los derechos reservados</footer>
+
+<script>
+// Si ya tiene sesión válida, redirigir al dashboard
+(async () => {
+  const token = localStorage.getItem("bdg_token");
+  if (!token) return;
+  try {
+    const r = await fetch("/auth/me", { headers: { Authorization: "Bearer " + token } });
+    if (r.ok) window.location.href = "/";
+  } catch(e) {}
+})();
+
+async function doRegister(e) {
+  e.preventDefault();
+  const btn   = document.getElementById("regBtn");
+  const alert = document.getElementById("alertMsg");
+  const name  = document.getElementById("name").value.trim();
+  const user  = document.getElementById("username").value.trim().toLowerCase().replace(/\s/g,"");
+  const pass  = document.getElementById("password").value;
+  const pass2 = document.getElementById("password2").value;
+
+  alert.classList.remove("show");
+
+  if (pass !== pass2) {
+    alert.textContent = "Las contraseñas no coinciden";
+    alert.className = "alert err show";
+    return;
+  }
+  if (!/^[a-z0-9._]+$/.test(user)) {
+    alert.textContent = "El usuario solo puede contener letras, números y puntos";
+    alert.className = "alert err show";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Enviando…";
+
+  try {
+    const r = await fetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, username: user, password: pass })
+    });
+    const data = await r.json();
+    if (r.ok) {
+      document.getElementById("formWrap").style.display = "none";
+      document.getElementById("successWrap").classList.add("show");
+    } else {
+      alert.textContent = data.error || "Error al registrar";
+      alert.className = "alert err show";
+    }
+  } catch(ex) {
+    alert.textContent = "No se pudo conectar al servidor";
+    alert.className = "alert err show";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Solicitar acceso";
+  }
+}
+</script>
+</body>
+</html>
