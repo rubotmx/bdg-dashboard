@@ -26,7 +26,9 @@ PORT         = int(os.environ.get("PORT", 3000))
 DIRECTORY    = os.path.dirname(os.path.abspath(__file__))
 SHOPIFY_STORE= os.environ.get("SHOPIFY_STORE", "baladigalamx.myshopify.com")
 SHOPIFY_TOKEN= os.environ.get("SHOPIFY_TOKEN", "")
-ADMIN_PASS   = os.environ.get("ADMIN_PASSWORD", "bdgadmin2026")
+ADMIN_USER   = os.environ.get("ADMIN_USER", "rdelarosa@baladigala.com")
+ADMIN_NAME   = os.environ.get("ADMIN_NAME", "Rubén De La Rosa")
+ADMIN_PASS   = os.environ.get("ADMIN_PASSWORD", "4124958AR12h!")
 DB_PATH      = os.environ.get("DB_PATH", os.path.join(DIRECTORY, "users.db"))
 
 # ──────────────────────────────────────────────
@@ -58,19 +60,19 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
     """)
-    # Asegurar que el admin siempre exista con la contraseña del env
-    salt = "bdg_fixed_admin_salt_v1"
+    # Asegurar que el super admin siempre exista con las credenciales del env
+    salt = "bdg_fixed_admin_salt_v2"
     pwd_hash = _hash(ADMIN_PASS, salt)
-    existing = conn.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()
+    existing = conn.execute("SELECT id FROM users WHERE username = ?", (ADMIN_USER,)).fetchone()
     if existing:
-        conn.execute("UPDATE users SET password_hash=?, salt=?, role='admin', active=1 WHERE username='admin'",
-                     (pwd_hash, salt))
+        conn.execute("UPDATE users SET password_hash=?, salt=?, name=?, role='admin', active=1 WHERE username=?",
+                     (pwd_hash, salt, ADMIN_NAME, ADMIN_USER))
     else:
         conn.execute("INSERT INTO users (username, name, password_hash, salt, role, active, created_at) VALUES (?,?,?,?,?,1,?)",
-                     ("admin", "Administrador BDG", pwd_hash, salt, "admin", _now()))
+                     (ADMIN_USER, ADMIN_NAME, pwd_hash, salt, "admin", _now()))
     conn.commit()
     conn.close()
-    print(f"[bdg-auth] DB: {DB_PATH}  |  admin/{ADMIN_PASS}")
+    print(f"[bdg-auth] DB: {DB_PATH}  |  {ADMIN_USER}")
 
 def _hash(password, salt):
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100000).hex()
@@ -164,7 +166,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             uid = self.path.rstrip("/").split("/")[-1]
             conn = get_conn()
             conn.execute("DELETE FROM sessions WHERE user_id=?", (uid,))
-            conn.execute("DELETE FROM users WHERE id=? AND username != 'admin'", (uid,))
+            conn.execute("DELETE FROM users WHERE id=? AND username != ?", (uid, ADMIN_USER))
             conn.commit(); conn.close()
             self._json(200, {"ok": True})
         else:

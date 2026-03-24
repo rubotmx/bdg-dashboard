@@ -220,8 +220,10 @@ async function loadUsers() {
 
 function renderUsers(users) {
   // Separar pendientes (active=0 y no son admin) de activos/inactivos creados por admin
-  const pending = users.filter(u => u.active === 0 && u.username !== "admin");
-  const rest    = users.filter(u => u.active !== 0 || u.username === "admin");
+  const superAdmin = users.find(u => u.role === "admin" && u.id === Math.min(...users.filter(x=>x.role==="admin").map(x=>x.id)));
+  const superAdminId = superAdmin ? superAdmin.id : null;
+  const pending = users.filter(u => u.active === 0 && u.id !== superAdminId);
+  const rest    = users.filter(u => u.active !== 0 || u.id === superAdminId);
 
   // Sección pendientes
   const pendingSection = document.getElementById("pendingSection");
@@ -269,13 +271,13 @@ function renderUsers(users) {
       <td>
         <div class="actions">
           <button class="btn ghost sm" onclick="openEditModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">Editar</button>
-          ${u.username !== "admin" ? `
+          ${u.id !== superAdminId ? `
             <button class="btn sm" onclick="toggleActive(${u.id}, ${u.active})"
               style="background:${u.active ? 'var(--warn-bg,#F5EDD6)' : 'var(--pos-l)'};color:${u.active ? 'var(--warn,#7A5C1E)' : 'var(--pos)'};border:none;">
               ${u.active ? "Desactivar" : "Activar"}
             </button>
             <button class="btn danger sm" onclick="deleteUser(${u.id}, '${u.name}')">Eliminar</button>
-          ` : `<span style="font-size:10px;color:var(--muted);">Admin principal</span>`}
+          ` : `<span style="font-size:10px;color:var(--oxide);">Super Admin</span>`}
         </div>
       </td>
     </tr>
