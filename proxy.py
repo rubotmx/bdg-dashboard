@@ -188,7 +188,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._create_user()
         elif self.path == "/api/schedule/events":
             user = verify_session(self._token())
-            if not user or user["role"] != "admin": return self._json(403, {"error": "Solo administradores pueden crear sesiones"})
+            if not user or user["role"] not in ("admin", "backend", "anfitriona"): return self._json(403, {"error": "Sin permisos para crear sesiones"})
             b = self._body()
             conn = get_conn()
             cur = conn.execute(
@@ -221,7 +221,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._update_user(uid)
         elif self.path.startswith("/api/schedule/events/"):
             user = verify_session(self._token())
-            if not user or user["role"] != "admin": return self._json(403, {"error": "Solo administradores pueden editar sesiones"})
+            if not user or user["role"] not in ("admin", "backend", "anfitriona"): return self._json(403, {"error": "Sin permisos para editar sesiones"})
             eid = self.path.rstrip("/").split("/")[-1]
             b = self._body()
             conn = get_conn()
@@ -337,7 +337,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         role     = body.get("role", "viewer")
         if not username or not name or not password:
             return self._json(400, {"error": "Faltan campos"})
-        if role not in ("admin", "viewer"):
+        if role not in ("admin", "viewer", "anfitriona", "backend"):
             return self._json(400, {"error": "Rol inválido"})
         salt     = secrets.token_hex(16)
         pwd_hash = _hash(password, salt)

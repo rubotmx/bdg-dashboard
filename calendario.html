@@ -355,13 +355,14 @@ const PEAK_HOURS  = [19, 19.5, 20, 20.5, 21, 21.5]; // TikTok peak
     if (currentUser.role === "admin") {
       document.getElementById("adminHostSection").style.display = "";
       document.getElementById("tabHosts").style.display = "";
-    } else {
+    }
+    if (!["admin","backend","anfitriona"].includes(currentUser.role)) {
       document.getElementById("readonlyBar").style.display = "";
     }
-    initColorGrid();
-    if (currentUser.role === "admin") {
+    if (["admin","backend","anfitriona"].includes(currentUser.role)) {
       document.getElementById("legendHint").textContent = "Sesiones de 90 min · Clic en slot vacío para crear";
     }
+    initColorGrid();
     await loadHosts();
     await loadEvents();
     renderCalendar();
@@ -496,20 +497,21 @@ function renderCalendar() {
         const border = ev.host_color;
         const fg = ev.host_color;
         block.style.cssText = `background:${bg};border-left-color:${border};height:${heightPx}px;`;
-        const isAdmin = currentUser && currentUser.role === "admin";
+        const canEdit   = currentUser && ["admin","backend","anfitriona"].includes(currentUser.role);
+        const canDelete = currentUser && currentUser.role === "admin";
         block.innerHTML = `
           <div class="sb-name" style="color:${fg};">${ev.host_name}</div>
           <div class="sb-role" style="color:${fg}80;">${getHostRole(ev.host_name)}</div>
           <div class="sb-time">${ev.start_time} – ${slotToTime(timeToSlot(ev.start_time) + ev.duration/60)}${ev.notes ? " · " + ev.notes : ""}</div>
-          ${isAdmin ? `<div class="sb-del" title="Eliminar" onclick="quickDelete(event,${ev.id})">✕</div>` : ""}`;
-        if (isAdmin) {
+          ${canDelete ? `<div class="sb-del" title="Eliminar" onclick="quickDelete(event,${ev.id})">✕</div>` : ""}`;
+        if (canEdit) {
           block.addEventListener("click", (e) => { if (!e.target.classList.contains("sb-del")) openEditModal(ev); });
         }
         cell.appendChild(block);
         cell.classList.add("occupied");
       } else {
         cell.classList.add("empty");
-        if (currentUser && currentUser.role === "admin") {
+        if (currentUser && ["admin","backend","anfitriona"].includes(currentUser.role)) {
           cell.addEventListener("click", () => openCreateModal(ds, timeStr));
           cell.addEventListener("mouseenter", () => previewSlot(ds, timeStr, cell));
           cell.addEventListener("mouseleave", clearPreview);

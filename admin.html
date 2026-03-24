@@ -59,7 +59,9 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 
 /* Role badge */
 .role-badge{display:inline-block;font-size:7.5px;letter-spacing:0.08em;padding:2px 8px;font-weight:500;}
-.role-badge.admin{background:var(--oxide-l, #FAEAE7);color:var(--oxide);}
+.role-badge.admin{background:var(--oxide-l,#FAEAE7);color:var(--oxide);}
+.role-badge.backend{background:#E8F0FA;color:#2B5C8A;}
+.role-badge.anfitriona{background:#E8F5EC;color:#2D6A3F;}
 .role-badge.viewer{background:var(--surface2);color:var(--text2);}
 .status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
 .status-dot.on{background:var(--pos);}
@@ -179,6 +181,8 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 2
       <div class="field">
         <label>Rol</label>
         <select id="mRole">
+          <option value="anfitriona">Anfitriona — solo lectura</option>
+          <option value="backend">Backend — puede crear sesiones</option>
           <option value="viewer">Viewer — solo lectura</option>
           <option value="admin">Admin — acceso completo</option>
         </select>
@@ -262,7 +266,7 @@ function renderUsers(users) {
     <tr>
       <td><strong>${u.name}</strong></td>
       <td style="color:var(--text2);font-size:11px;">${u.username}</td>
-      <td><span class="role-badge ${u.role}">${u.role === "admin" ? "Admin" : "Viewer"}</span></td>
+      <td><span class="role-badge ${u.role}">${{admin:"Admin",backend:"Backend",anfitriona:"Anfitriona",viewer:"Viewer"}[u.role]||u.role}</span></td>
       <td>
         <span class="status-dot ${u.active ? 'on' : 'off'}"></span>
         <span style="font-size:11px;color:var(--text2);margin-left:5px;">${u.active ? "Activo" : "Inactivo"}</span>
