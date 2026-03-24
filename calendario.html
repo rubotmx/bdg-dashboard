@@ -196,7 +196,11 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 2
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('cal')" id="tabCal">Calendario</button>
-  <button class="tab-btn" onclick="switchTab('hosts')" id="tabHosts">Anfitrionas</button>
+  <button class="tab-btn" onclick="switchTab('hosts')" id="tabHosts" style="display:none;">Anfitrionas</button>
+</div>
+<!-- Banda solo lectura para viewers -->
+<div id="readonlyBar" style="display:none;background:var(--surface2);border-bottom:1px solid var(--line);padding:6px 28px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);">
+  Vista de solo lectura · Contacta al administrador para hacer cambios
 </div>
 
 <!-- ── VISTA CALENDARIO ── -->
@@ -209,7 +213,7 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 2
     <div class="legend">
       <div class="li"><div class="ldot" style="background:rgba(184,67,42,.07);border-left-color:var(--oxide-ll);"></div>Hora pico TikTok</div>
       <div class="li"><div class="ldot" style="background:var(--surface2);border-left-color:var(--carbon);"></div>Sesión asignada</div>
-      <div style="color:var(--muted);font-size:9px;letter-spacing:.04em;">Sesiones de 90 min · Clic en slot vacío para crear</div>
+      <div id="legendHint" style="color:var(--muted);font-size:9px;letter-spacing:.04em;">Sesiones de 90 min</div>
     </div>
 
     <!-- Calendar grid -->
@@ -350,8 +354,14 @@ const PEAK_HOURS  = [19, 19.5, 20, 20.5, 21, 21.5]; // TikTok peak
     document.getElementById("topUser").textContent = currentUser.name;
     if (currentUser.role === "admin") {
       document.getElementById("adminHostSection").style.display = "";
+      document.getElementById("tabHosts").style.display = "";
+    } else {
+      document.getElementById("readonlyBar").style.display = "";
     }
     initColorGrid();
+    if (currentUser.role === "admin") {
+      document.getElementById("legendHint").textContent = "Sesiones de 90 min · Clic en slot vacío para crear";
+    }
     await loadHosts();
     await loadEvents();
     renderCalendar();
@@ -486,20 +496,24 @@ function renderCalendar() {
         const border = ev.host_color;
         const fg = ev.host_color;
         block.style.cssText = `background:${bg};border-left-color:${border};height:${heightPx}px;`;
+        const isAdmin = currentUser && currentUser.role === "admin";
         block.innerHTML = `
           <div class="sb-name" style="color:${fg};">${ev.host_name}</div>
           <div class="sb-role" style="color:${fg}80;">${getHostRole(ev.host_name)}</div>
           <div class="sb-time">${ev.start_time} – ${slotToTime(timeToSlot(ev.start_time) + ev.duration/60)}${ev.notes ? " · " + ev.notes : ""}</div>
-          <div class="sb-del" title="Eliminar" onclick="quickDelete(event,${ev.id})">✕</div>`;
-        block.addEventListener("click", (e) => { if (!e.target.classList.contains("sb-del")) openEditModal(ev); });
+          ${isAdmin ? `<div class="sb-del" title="Eliminar" onclick="quickDelete(event,${ev.id})">✕</div>` : ""}`;
+        if (isAdmin) {
+          block.addEventListener("click", (e) => { if (!e.target.classList.contains("sb-del")) openEditModal(ev); });
+        }
         cell.appendChild(block);
         cell.classList.add("occupied");
       } else {
         cell.classList.add("empty");
-        cell.addEventListener("click", () => openCreateModal(ds, timeStr));
-        // Drag preview on hover
-        cell.addEventListener("mouseenter", () => previewSlot(ds, timeStr, cell));
-        cell.addEventListener("mouseleave", clearPreview);
+        if (currentUser && currentUser.role === "admin") {
+          cell.addEventListener("click", () => openCreateModal(ds, timeStr));
+          cell.addEventListener("mouseenter", () => previewSlot(ds, timeStr, cell));
+          cell.addEventListener("mouseleave", clearPreview);
+        }
       }
 
       grid.appendChild(cell);

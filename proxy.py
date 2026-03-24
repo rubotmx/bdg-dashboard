@@ -188,7 +188,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._create_user()
         elif self.path == "/api/schedule/events":
             user = verify_session(self._token())
-            if not user: return self._json(401, {"error": "No autorizado"})
+            if not user or user["role"] != "admin": return self._json(403, {"error": "Solo administradores pueden crear sesiones"})
             b = self._body()
             conn = get_conn()
             cur = conn.execute(
@@ -221,7 +221,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._update_user(uid)
         elif self.path.startswith("/api/schedule/events/"):
             user = verify_session(self._token())
-            if not user: return self._json(401, {"error": "No autorizado"})
+            if not user or user["role"] != "admin": return self._json(403, {"error": "Solo administradores pueden editar sesiones"})
             eid = self.path.rstrip("/").split("/")[-1]
             b = self._body()
             conn = get_conn()
@@ -258,7 +258,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._json(200, {"ok": True})
         elif self.path.startswith("/api/schedule/events/"):
             user = verify_session(self._token())
-            if not user: return self._json(401, {"error": "No autorizado"})
+            if not user or user["role"] != "admin": return self._json(403, {"error": "Solo administradores pueden eliminar sesiones"})
             eid = self.path.rstrip("/").split("/")[-1]
             conn = get_conn()
             conn.execute("DELETE FROM schedule_events WHERE id=?", (eid,))
