@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BDG · Usuarios</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F8F8F7; --surface:#FFFFFF; --surface2:#F2F2F0; --surface3:#E8E8E5;
+  --line:#E0E0DC; --line2:#CBCBC6;
+  --carbon:#1C1C1A; --carbon2:#2E2E2B; --carbon3:#444441;
+  --text:#1C1C1A; --text2:#5A5A56; --muted:#9A9A94;
+  --oxide:#B8432A; --oxide2:#D4573E; --oxide-l:#FAEAE7;
+  --pos:#2D6A3F; --pos-l:#E8F5EC;
+  --neg:#8B2020; --neg-l:#F5EAEA;
+  --font-serif:'EB Garamond',serif;
+  --font-sans:'Jost',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:13px;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh;}
+
+.topbar{background:var(--carbon);padding:6px 28px;display:flex;align-items:center;justify-content:space-between;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+.topbar a{color:rgba(255,255,255,0.4);text-decoration:none;cursor:pointer;}
+.topbar a:hover{color:#fff;}
+
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 28px 12px;display:flex;align-items:center;justify-content:space-between;}
+.logo-img{height:22px;width:auto;display:block;filter:brightness(0);}
+.brand-sub{font-size:9px;letter-spacing:0.26em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
+.btn{background:var(--carbon);color:#fff;border:none;padding:8px 18px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.17em;text-transform:uppercase;font-weight:500;cursor:pointer;border-radius:0;transition:background 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--carbon2);}
+.btn.accent{background:var(--oxide);}
+.btn.accent:hover{background:var(--oxide2);}
+.btn.ghost{background:transparent;color:var(--text2);border:1px solid var(--line2);}
+.btn.ghost:hover{background:var(--surface2);}
+.btn.danger{background:transparent;color:var(--neg);border:1px solid var(--neg-l);}
+.btn.danger:hover{background:var(--neg-l);}
+.btn.sm{padding:5px 12px;font-size:8px;}
+
+main{max-width:900px;margin:0 auto;padding:28px 28px 60px;}
+.page-title{font-family:var(--font-serif);font-size:24px;font-weight:600;margin-bottom:4px;}
+.page-sub{font-size:11px;color:var(--muted);}
+
+/* Section */
+.sec{border:1px solid var(--line);background:var(--surface);margin-top:24px;}
+.sec-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.sec-title{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+
+/* Table */
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--carbon);}
+thead th{font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.6);padding:9px 14px;text-align:left;font-weight:500;}
+tbody tr{border-bottom:1px solid var(--line);transition:background 0.1s;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
+.actions{display:flex;gap:6px;}
+
+/* Role badge */
+.role-badge{display:inline-block;font-size:7.5px;letter-spacing:0.08em;padding:2px 8px;font-weight:500;}
+.role-badge.admin{background:var(--oxide-l, #FAEAE7);color:var(--oxide);}
+.role-badge.viewer{background:var(--surface2);color:var(--text2);}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.status-dot.on{background:var(--pos);}
+.status-dot.off{background:var(--muted);}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px;}
+.field label{display:block;font-size:8.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:500;}
+.field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line2);background:var(--bg);font-family:var(--font-sans);font-size:13px;color:var(--text);outline:none;border-radius:0;}
+.field input:focus,.field select:focus{border-color:var(--oxide);}
+.form-footer{padding:0 18px 18px;display:flex;gap:8px;justify-content:flex-end;}
+
+/* Alert */
+.alert{padding:9px 14px;margin:14px 18px 0;font-size:11px;display:none;}
+.alert.show{display:block;}
+.alert.ok{background:var(--pos-l);color:var(--pos);}
+.alert.err{background:var(--neg-l);color:var(--neg);}
+
+/* Modal overlay */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;display:none;}
+.modal.open{display:flex;}
+.modal-card{background:var(--surface);border:1px solid var(--line);width:100%;max-width:420px;padding:28px;}
+.modal-title{font-family:var(--font-serif);font-size:18px;margin-bottom:18px;}
+.modal-fields{display:flex;flex-direction:column;gap:14px;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+
+footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 28px;text-align:center;font-size:8.5px;letter-spacing:0.1em;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span>BDG · Administración</span>
+  <span>
+    <a onclick="window.location.href='/'">← Volver al dashboard</a>
+    &nbsp;·&nbsp;
+    <a onclick="logout()" id="userLabel">—</a>
+  </span>
+</div>
+
+<header>
+  <div>
+    <img class="logo-img"
+      src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610"
+      alt="BALA DI GALA">
+    <div class="brand-sub">Gestión de usuarios y permisos</div>
+  </div>
+  <button class="btn accent" onclick="openCreateModal()">+ Nuevo usuario</button>
+</header>
+
+<main>
+  <div class="page-title">Usuarios del sistema</div>
+  <div class="page-sub" id="pageSubtitle">Cargando…</div>
+
+  <!-- User list -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-title">Usuarios registrados</span>
+    </div>
+    <div id="alertMsg" class="alert"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="usersBody">
+        <tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Cargando usuarios…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<footer>© 2026 Bala Di Gala · Hand Detail SA de CV · Todos los derechos reservados</footer>
+
+<!-- Modal crear/editar usuario -->
+<div class="modal" id="userModal">
+  <div class="modal-card">
+    <div class="modal-title" id="modalTitle">Nuevo usuario</div>
+    <div class="modal-fields">
+      <div class="field">
+        <label>Nombre completo</label>
+        <input type="text" id="mName" placeholder="Ej. Ana García">
+      </div>
+      <div class="field">
+        <label>Usuario (para login)</label>
+        <input type="text" id="mUsername" autocapitalize="none" placeholder="ana.garcia">
+      </div>
+      <div class="field">
+        <label>Contraseña <span id="mPassHint" style="font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0;">(dejar vacío para no cambiar)</span></label>
+        <input type="password" id="mPassword" placeholder="••••••••">
+      </div>
+      <div class="field">
+        <label>Rol</label>
+        <select id="mRole">
+          <option value="viewer">Viewer — solo lectura</option>
+          <option value="admin">Admin — acceso completo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn accent" onclick="saveUser()" id="saveBtn">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let TOKEN = localStorage.getItem("bdg_token");
+let currentUser = null;
+let editingId = null;
+
+// ── Auth check ──
+(async () => {
+  if (!TOKEN) return (window.location.href = "/login.html");
+  try {
+    const r = await fetch("/auth/me", { headers: { Authorization: "Bearer " + TOKEN } });
+    if (!r.ok) { localStorage.removeItem("bdg_token"); return (window.location.href = "/login.html"); }
+    currentUser = await r.json();
+    if (currentUser.role !== "admin") return (window.location.href = "/");
+    document.getElementById("userLabel").textContent = `Cerrar sesión (${currentUser.name})`;
+    document.getElementById("pageSubtitle").textContent = `Administra quién puede acceder al dashboard y con qué permisos.`;
+    loadUsers();
+  } catch(e) { window.location.href = "/login.html"; }
+})();
+
+async function loadUsers() {
+  try {
+    const r = await fetch("/admin/users", { headers: { Authorization: "Bearer " + TOKEN } });
+    const data = await r.json();
+    renderUsers(data.users || []);
+  } catch(e) { showAlert("Error al cargar usuarios", "err"); }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById("usersBody");
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Sin usuarios</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${u.name}</strong></td>
+      <td style="color:var(--text2);font-size:11px;">${u.username}</td>
+      <td><span class="role-badge ${u.role}">${u.role === "admin" ? "Admin" : "Viewer"}</span></td>
+      <td>
+        <span class="status-dot ${u.active ? 'on' : 'off'}"></span>
+        <span style="font-size:11px;color:var(--text2);margin-left:5px;">${u.active ? "Activo" : "Inactivo"}</span>
+      </td>
+      <td style="font-size:11px;color:var(--muted);">${formatDate(u.created_at)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn ghost sm" onclick="openEditModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">Editar</button>
+          ${u.username !== "admin" ? `
+            <button class="btn sm" onclick="toggleActive(${u.id}, ${u.active})"
+              style="background:${u.active ? 'var(--warn-bg,#F5EDD6)' : 'var(--pos-l)'};color:${u.active ? 'var(--warn,#7A5C1E)' : 'var(--pos)'};border:none;">
+              ${u.active ? "Desactivar" : "Activar"}
+            </button>
+            <button class="btn danger sm" onclick="deleteUser(${u.id}, '${u.name}')">Eliminar</button>
+          ` : `<span style="font-size:10px;color:var(--muted);">Admin principal</span>`}
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ── Modal crear ──
+function openCreateModal() {
+  editingId = null;
+  document.getElementById("modalTitle").textContent = "Nuevo usuario";
+  document.getElementById("mName").value = "";
+  document.getElementById("mUsername").value = "";
+  document.getElementById("mUsername").disabled = false;
+  document.getElementById("mPassword").value = "";
+  document.getElementById("mRole").value = "viewer";
+  document.getElementById("mPassHint").style.display = "none";
+  document.getElementById("userModal").classList.add("open");
+}
+
+function openEditModal(u) {
+  editingId = u.id;
+  document.getElementById("modalTitle").textContent = `Editar: ${u.name}`;
+  document.getElementById("mName").value = u.name;
+  document.getElementById("mUsername").value = u.username;
+  document.getElementById("mUsername").disabled = true;
+  document.getElementById("mPassword").value = "";
+  document.getElementById("mRole").value = u.role;
+  document.getElementById("mPassHint").style.display = "inline";
+  document.getElementById("userModal").classList.add("open");
+}
+
+function closeModal() {
+  document.getElementById("userModal").classList.remove("open");
+}
+
+async function saveUser() {
+  const name     = document.getElementById("mName").value.trim();
+  const username = document.getElementById("mUsername").value.trim().toLowerCase();
+  const password = document.getElementById("mPassword").value;
+  const role     = document.getElementById("mRole").value;
+  const btn      = document.getElementById("saveBtn");
+
+  if (!name) return showAlert("El nombre es requerido", "err");
+  if (!editingId && (!username || !password)) return showAlert("Usuario y contraseña son requeridos", "err");
+
+  btn.disabled = true;
+  try {
+    let r;
+    if (editingId) {
+      const body = { name, role };
+      if (password) body.password = password;
+      r = await fetch(`/admin/users/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN },
+        body: JSON.stringify(body)
+      });
+    } else {
+      r = await fetch("/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN },
+        body: JSON.stringify({ name, username, password, role })
+      });
+    }
+    const data = await r.json();
+    if (r.ok) {
+      closeModal();
+      showAlert(editingId ? "Usuario actualizado" : "Usuario creado correctamente", "ok");
+      loadUsers();
+    } else {
+      showAlert(data.error || "Error al guardar", "err");
+    }
+  } catch(e) {
+    showAlert("Error de conexión", "err");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function toggleActive(id, current) {
+  await fetch(`/admin/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN },
+    body: JSON.stringify({ active: !current })
+  });
+  loadUsers();
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`¿Eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+  const r = await fetch(`/admin/users/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + TOKEN }
+  });
+  if (r.ok) { showAlert("Usuario eliminado", "ok"); loadUsers(); }
+  else showAlert("Error al eliminar", "err");
+}
+
+function showAlert(msg, type) {
+  const el = document.getElementById("alertMsg");
+  el.textContent = msg;
+  el.className = `alert ${type} show`;
+  setTimeout(() => el.classList.remove("show"), 4000);
+}
+
+function formatDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-MX", { day:"numeric", month:"short", year:"numeric" });
+}
+
+async function logout() {
+  await fetch("/auth/logout", { method:"POST", headers:{ Authorization:"Bearer "+TOKEN }});
+  localStorage.removeItem("bdg_token");
+  localStorage.removeItem("bdg_user");
+  window.location.href = "/login.html";
+}
+
+// Cerrar modal con Escape
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+</script>
+</body>
+</html>

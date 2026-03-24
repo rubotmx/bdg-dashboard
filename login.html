@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BDG · Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F8F8F7; --surface:#FFFFFF;
+  --line:#E0E0DC; --line2:#CBCBC6;
+  --carbon:#1C1C1A; --carbon2:#2E2E2B;
+  --text:#1C1C1A; --text2:#5A5A56; --muted:#9A9A94;
+  --oxide:#B8432A; --oxide2:#D4573E; --oxide-l:#FAEAE7;
+  --neg:#8B2020; --neg-l:#F5EAEA;
+  --font-serif:'EB Garamond',serif;
+  --font-sans:'Jost',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);display:flex;flex-direction:column;min-height:100vh;}
+
+/* topbar */
+.topbar{background:var(--carbon);padding:6px 28px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);text-align:center;}
+
+/* center wrap */
+.center{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+
+.card{background:var(--surface);border:1px solid var(--line);width:100%;max-width:380px;padding:40px 36px 36px;}
+
+.card-logo{display:block;height:18px;width:auto;filter:brightness(0);margin:0 auto 6px;}
+.card-sub{text-align:center;font-size:8.5px;letter-spacing:0.26em;text-transform:uppercase;color:var(--muted);margin-bottom:32px;}
+
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:8.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-weight:500;}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--line2);background:var(--bg);font-family:var(--font-sans);font-size:13px;color:var(--text);outline:none;border-radius:0;transition:border-color 0.15s;}
+.field input:focus{border-color:var(--oxide);background:var(--surface);}
+
+.btn{width:100%;background:var(--carbon);color:#fff;border:none;padding:11px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;cursor:pointer;border-radius:0;transition:background 0.2s;margin-top:6px;}
+.btn:hover{background:var(--carbon2);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+.error-msg{background:var(--neg-l);color:var(--neg);font-size:11px;padding:9px 12px;margin-bottom:18px;display:none;line-height:1.5;}
+.error-msg.show{display:block;}
+
+/* footer */
+footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 28px;text-align:center;font-size:8.5px;letter-spacing:0.1em;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="topbar">Bala Di Gala · Bodega · Sistema interno</div>
+
+<div class="center">
+  <div class="card">
+    <img class="card-logo"
+      src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610"
+      alt="BALA DI GALA">
+    <div class="card-sub">Dashboard · Acceso al sistema</div>
+
+    <div class="error-msg" id="errMsg"></div>
+
+    <form id="loginForm" onsubmit="doLogin(event)">
+      <div class="field">
+        <label>Usuario</label>
+        <input type="text" id="username" autocomplete="username" autocapitalize="none" placeholder="tu_usuario" required>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <button class="btn" type="submit" id="loginBtn">Ingresar</button>
+    </form>
+  </div>
+</div>
+
+<footer>© 2026 Bala Di Gala · Hand Detail SA de CV · Todos los derechos reservados</footer>
+
+<script>
+// Si ya tiene sesión válida, redirigir directo
+(async () => {
+  const token = localStorage.getItem("bdg_token");
+  if (token) {
+    try {
+      const r = await fetch("/auth/me", { headers: { Authorization: "Bearer " + token } });
+      if (r.ok) { window.location.href = "/"; return; }
+    } catch(e) {}
+    localStorage.removeItem("bdg_token");
+    localStorage.removeItem("bdg_user");
+  }
+})();
+
+async function doLogin(e) {
+  e.preventDefault();
+  const btn  = document.getElementById("loginBtn");
+  const err  = document.getElementById("errMsg");
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value;
+
+  btn.disabled = true;
+  btn.textContent = "Ingresando…";
+  err.classList.remove("show");
+
+  try {
+    const r = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const data = await r.json();
+    if (r.ok) {
+      localStorage.setItem("bdg_token", data.token);
+      localStorage.setItem("bdg_user", JSON.stringify(data.user));
+      window.location.href = data.user.role === "admin" ? "/" : "/";
+    } else {
+      err.textContent = data.error || "Error al ingresar";
+      err.classList.add("show");
+    }
+  } catch(ex) {
+    err.textContent = "No se pudo conectar al servidor";
+    err.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Ingresar";
+  }
+}
+</script>
+</body>
+</html>
