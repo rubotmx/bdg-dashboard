@@ -362,21 +362,34 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
     def _update_user(self, uid):
         body = self._body()
-        conn = get_conn()
-        if "password" in body and body["password"]:
-            salt     = secrets.token_hex(16)
-            pwd_hash = _hash(body["password"], salt)
-            conn.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (pwd_hash, salt, uid))
-        if "role" in body:
-            conn.execute("UPDATE users SET role=? WHERE id=?", (body["role"], uid))
-        if "active" in body:
-            conn.execute("UPDATE users SET active=? WHERE id=?", (1 if body["active"] else 0, uid))
-        if "name" in body:
-            conn.execute("UPDATE users SET name=? WHERE id=?", (body["name"], uid))
-        if "color" in body:
-            conn.execute("UPDATE users SET color=? WHERE id=?", (body["color"], uid))
-        conn.commit(); conn.close()
-        self._json(200, {"ok": True})
+        conn = None
+        try:
+            conn = get_conn()
+            if "password" in body and body["password"]:
+                salt     = secrets.token_hex(16)
+                pwd_hash = _hash(body["password"], salt)
+                conn.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (pwd_hash, salt, uid))
+            if "role" in body:
+                role = body["role"]
+                if role not in ("admin", "viewer", "anfitriona", "backend"):
+                    conn.close()
+                    return self._json(400, {"error": f"Rol inválido: {role}"})
+                conn.execute("UPDATE users SET role=? WHERE id=?", (role, uid))
+            if "active" in body:
+                conn.execute("UPDATE users SET active=? WHERE id=?", (1 if body["active"] else 0, uid))
+            if "name" in body:
+                conn.execute("UPDATE users SET name=? WHERE id=?", (body["name"], uid))
+            if "color" in body:
+                conn.execute("UPDATE users SET color=? WHERE id=?", (body["color"], uid))
+            conn.commit()
+            conn.close()
+            self._json(200, {"ok": True})
+        except Exception as e:
+            if conn:
+                try: conn.close()
+                except: pass
+            print(f"[bdg] ERROR en _update_user uid={uid}: {e}")
+            self._json(500, {"error": str(e)})
 
     # ── SHOPIFY PROXY ──
     def _proxy_shopify(self):

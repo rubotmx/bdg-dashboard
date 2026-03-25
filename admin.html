@@ -250,7 +250,7 @@ function renderUsers(users) {
               <option value="admin">Admin</option>
             </select>
             <button class="btn accent sm" onclick="approveUser(${u.id})">✓ Aprobar</button>
-            <button class="btn danger sm" onclick="deleteUser(${u.id}, '${u.name}')">Rechazar</button>
+            <button class="btn danger sm" onclick="deleteUser(${u.id}, ${JSON.stringify(u.name)})">Rechazar</button>
           </div>
         </td>
       </tr>
@@ -364,13 +364,18 @@ async function saveUser() {
 
 async function approveUser(id) {
   const role = document.getElementById(`role_${id}`)?.value || "viewer";
-  const r = await fetch(`/admin/users/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN },
-    body: JSON.stringify({ active: true, role })
-  });
-  if (r.ok) { showAlert("Usuario aprobado y activado", "ok"); loadUsers(); }
-  else showAlert("Error al aprobar", "err");
+  try {
+    const r = await fetch(`/admin/users/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN },
+      body: JSON.stringify({ active: true, role })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok) { showAlert("Usuario aprobado y activado", "ok"); loadUsers(); }
+    else showAlert(data.error || `Error al aprobar (${r.status})`, "err");
+  } catch(e) {
+    showAlert("Error de conexión al aprobar", "err");
+  }
 }
 
 async function toggleActive(id, current) {
