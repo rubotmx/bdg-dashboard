@@ -215,12 +215,6 @@ footer{border-top:1px solid var(--line);padding:10px 28px;display:flex;justify-c
     <button class="btn accent" id="syncBtn" onclick="loadInventory()">
       <span id="syncIcon">↻</span> Actualizar
     </button>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-      <button class="btn secondary" id="adminBtn" onclick="window.location.href='/admin.html'" style="display:none;font-size:8px;padding:6px 12px;">⚙ Usuarios</button>
-      <button class="btn secondary" onclick="window.location.href='/'" style="font-size:8px;padding:6px 12px;">← Home</button>
-      <button class="btn secondary" onclick="window.location.href='/calendario.html'" style="font-size:8px;padding:6px 12px;">📅 Calendario Live</button>
-      <button class="btn secondary" onclick="logout()" style="font-size:8px;padding:6px 12px;">Salir <span id="userNameLabel"></span></button>
-    </div>
   </div>
 </header>
 
@@ -264,33 +258,6 @@ footer{border-top:1px solid var(--line);padding:10px 28px;display:flex;justify-c
 </div>
 
 <script>
-// ── AUTH ──
-(async () => {
-  const token = localStorage.getItem("bdg_token");
-  if (!token) return (window.location.href = "/login.html");
-  try {
-    const r = await fetch("/auth/me", { headers: { Authorization: "Bearer " + token } });
-    if (!r.ok) { localStorage.removeItem("bdg_token"); return (window.location.href = "/login.html"); }
-    const user = await r.json();
-    localStorage.setItem("bdg_user", JSON.stringify(user));
-    const label = document.getElementById("userNameLabel");
-    if (label) label.textContent = `(${user.name.split(" ")[0]})`;
-    if (user.role === "admin") {
-      const adminBtn = document.getElementById("adminBtn");
-      if (adminBtn) adminBtn.style.display = "inline-flex";
-    }
-  } catch(e) { window.location.href = "/login.html"; }
-})();
-
-async function logout() {
-  const token = localStorage.getItem("bdg_token");
-  if (token) {
-    try { await fetch("/auth/logout", { method:"POST", headers:{ Authorization:"Bearer "+token }}); } catch(e){}
-  }
-  localStorage.removeItem("bdg_token");
-  localStorage.removeItem("bdg_user");
-  window.location.href = "/login.html";
-}
 
 const GROUPED_PRODUCTS = new Set(["PENNY CLOG","PENNY PONY CLOGS","PARKER CLOGS","FRANKIE CLOGS"]);
 
@@ -503,11 +470,7 @@ function parseVariants(raw) {
 }
 
 async function fetchInventory(titleFilter) {
-  const token = localStorage.getItem("bdg_token") || "";
-  const res = await fetch(`/api/shopify?title=${encodeURIComponent(titleFilter)}`, {
-    headers: { Authorization: "Bearer " + token }
-  });
-  if (res.status === 401) { window.location.href = "/login.html"; throw new Error("No autorizado"); }
+  const res = await fetch(`/api/shopify?title=${encodeURIComponent(titleFilter)}`);
   if (!res.ok) throw new Error(`Shopify ${res.status}`);
   const data = await res.json();
   const variants = [];

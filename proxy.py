@@ -136,9 +136,6 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     # ── GET ──
     def do_GET(self):
         if self.path.startswith("/api/shopify"):
-            user = verify_session(self._token())
-            if not user:
-                return self._json(401, {"error": "No autorizado"})
             self._proxy_shopify()
         elif self.path.startswith("/auth/me"):
             user = verify_session(self._token())
