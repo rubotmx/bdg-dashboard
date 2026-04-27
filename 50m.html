@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BDG · Módulo 50M</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#F8F8F7; --surface:#FFFFFF; --surface2:#F2F2F0; --surface3:#E8E8E5;
+  --line:#E0E0DC; --line2:#CBCBC6;
+  --carbon:#1C1C1A; --carbon2:#2E2E2B; --carbon3:#444441;
+  --text:#1C1C1A; --text2:#5A5A56; --muted:#9A9A94;
+  --oxide:#B8432A; --oxide2:#D4573E; --oxide-l:#FAEAE7;
+  --pos:#2D6A3F; --pos-l:#E8F5EC;
+  --neg:#8B2020; --neg-l:#F5EAEA;
+  --font-serif:'EB Garamond',serif;
+  --font-sans:'Jost',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:13px;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-weight:400;line-height:1.5;min-height:100vh;}
+
+#loading{position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;transition:opacity 0.4s;}
+#loading.hidden{opacity:0;pointer-events:none;}
+#loading .lo-bar{width:140px;height:1px;background:var(--line);}
+#loading .lo-fill{height:100%;background:var(--oxide);width:0%;animation:lp 2.5s ease-out forwards;}
+@keyframes lp{0%{width:0}60%{width:70%}100%{width:96%}}
+#loading .lo-msg{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);}
+
+.topbar{background:var(--carbon);padding:6px 28px;display:flex;align-items:center;justify-content:space-between;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#8fbe6a;animation:blink 2.5s ease-in-out infinite;display:inline-block;margin-right:6px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar a{color:rgba(255,255,255,0.35);text-decoration:none;}
+.topbar a:hover{color:#fff;}
+
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 28px 12px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.header-left{display:flex;flex-direction:column;gap:2px;}
+.page-title{font-family:var(--font-serif);font-size:22px;font-weight:600;color:var(--text);}
+.page-sub{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+.btn{background:var(--carbon);color:#fff;border:none;padding:8px 18px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.17em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:background 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--carbon2);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line2);}
+.btn.secondary:hover{background:var(--surface2);}
+.btn.accent{background:var(--oxide);}
+.btn.accent:hover{background:var(--oxide2);}
+.spin{animation:spin 1s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+main{max-width:1300px;margin:0 auto;padding:0 28px 60px;}
+.sec{border-top:1px solid var(--line);padding-top:20px;margin-top:20px;}
+.sec-lbl{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--line);}
+
+.update-bar{margin:14px 0 0;background:var(--surface);border:1px solid var(--line);padding:9px 14px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:18px 0 0;}
+.kpi{background:var(--surface);padding:14px 16px 12px;}
+.kpi.accent-card{background:var(--carbon);}
+.kpi.oxide-card{background:var(--oxide);}
+.kl{font-size:8.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.kpi.accent-card .kl,.kpi.oxide-card .kl{color:rgba(255,255,255,0.5);}
+.kv{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--text);line-height:1;margin-bottom:3px;}
+.kpi.accent-card .kv,.kpi.oxide-card .kv{color:#fff;}
+.ks{font-size:10px;color:var(--text2);}
+.kpi.accent-card .ks,.kpi.oxide-card .ks{color:rgba(255,255,255,0.5);}
+
+.filter-row{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;align-items:center;}
+.filter-btn{background:transparent;border:1px solid var(--line2);color:var(--text2);padding:5px 14px;font-family:var(--font-sans);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;}
+.filter-btn:hover{border-color:var(--carbon);color:var(--text);}
+.filter-btn.active{background:var(--carbon);color:#fff;border-color:var(--carbon);}
+
+.chart-wrap{background:var(--surface);border:1px solid var(--line);padding:20px 20px 16px;margin-top:18px;}
+.chart-title{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.chart-canvas{width:100%!important;height:320px!important;}
+
+table{width:100%;border-collapse:collapse;font-size:11.5px;}
+thead tr{border-bottom:1px solid var(--line);}
+thead th{padding:8px 10px;text-align:left;font-size:8.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap;}
+thead th.num{text-align:right;}
+tbody tr{border-bottom:1px solid var(--line);transition:background 0.1s;}
+tbody tr:hover{background:var(--surface2);}
+tbody tr.top80{background:var(--oxide-l);}
+tbody tr.top80:hover{background:#f0d0c8;}
+td{padding:8px 10px;color:var(--text);}
+td.num{text-align:right;font-variant-numeric:tabular-nums;}
+td.muted{color:var(--muted);}
+.badge{display:inline-block;font-size:8px;letter-spacing:0.1em;padding:2px 7px;font-weight:500;text-transform:uppercase;}
+.badge-shopify{background:#e8f0fa;color:#2B5C8A;}
+.badge-palacio{background:#f5edd6;color:#7A5C1E;}
+.badge-ml{background:#fff3cc;color:#856404;}
+.badge-top{background:var(--oxide-l);color:var(--oxide);}
+
+.bar-bg{background:var(--line);height:4px;border-radius:2px;width:80px;display:inline-block;vertical-align:middle;}
+.bar-fill{height:100%;background:var(--oxide);border-radius:2px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;display:flex;align-items:center;justify-content:center;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--surface);border:1px solid var(--line);padding:28px;width:100%;max-width:440px;}
+.modal h3{font-family:var(--font-serif);font-size:20px;margin-bottom:18px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.field label{font-size:8.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);}
+.field input{border:1px solid var(--line2);background:var(--surface);color:var(--text);padding:8px 10px;font-family:var(--font-sans);font-size:12px;outline:none;transition:border-color 0.15s;}
+.field input:focus{border-color:var(--carbon);}
+.modal-actions{display:flex;gap:8px;margin-top:6px;}
+
+footer{background:var(--surface);border-top:1px solid var(--line);padding:10px 28px;text-align:center;font-size:8.5px;letter-spacing:0.1em;color:var(--muted);}
+
+@media(max-width:700px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  header{flex-direction:column;align-items:flex-start;}
+  .header-actions{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="lo-bar"><div class="lo-fill"></div></div>
+  <div class="lo-msg">Cargando datos · 90 días</div>
+</div>
+
+<div class="topbar">
+  <span><span class="live-dot"></span>BDG HQ</span>
+  <span><a href="/">← Inicio</a></span>
+</div>
+
+<header>
+  <div class="header-left">
+    <div class="page-title">Módulo 50M</div>
+    <div class="page-sub">Análisis 80/20 · Últimos 90 días · Todos los canales</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn secondary" onclick="openModal('palacio')">+ Palacio de Hierro</button>
+    <button class="btn secondary" onclick="openModal('mercadolibre')">+ Mercado Libre</button>
+    <button class="btn" id="btnRefresh" onclick="loadAll()">↻ Actualizar</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="update-bar" id="updateBar" style="display:none">
+    <span>📡</span>
+    <span id="updateMsg"></span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi"><div class="kl">Ventas totales</div><div class="kv" id="kTotal">—</div><div class="ks">todos los canales</div></div>
+    <div class="kpi"><div class="kl">Productos en análisis</div><div class="kv" id="kCount">—</div><div class="ks">últimos 90 días</div></div>
+    <div class="kpi accent-card"><div class="kl">Productos TOP 80</div><div class="kv" id="kTop">—</div><div class="ks" id="kTopPct">del catálogo</div></div>
+    <div class="kpi oxide-card"><div class="kl">Ingreso TOP 80</div><div class="kv" id="kTopRev">—</div><div class="ks">80% de tus ventas</div></div>
+  </div>
+
+  <!-- Filtro canal -->
+  <div class="filter-row">
+    <span style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);">Canal:</span>
+    <button class="filter-btn active" data-canal="todos" onclick="setCanal('todos',this)">Todos</button>
+    <button class="filter-btn" data-canal="shopify" onclick="setCanal('shopify',this)">Shopify</button>
+    <button class="filter-btn" data-canal="palacio" onclick="setCanal('palacio',this)">Palacio de Hierro</button>
+    <button class="filter-btn" data-canal="mercadolibre" onclick="setCanal('mercadolibre',this)">Mercado Libre</button>
+  </div>
+
+  <!-- Gráfica -->
+  <div class="sec">
+    <div class="sec-lbl">Curva de Pareto — Top 25 productos</div>
+    <div class="chart-wrap">
+      <canvas id="paretoChart" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="sec">
+    <div class="sec-lbl">Detalle por producto</div>
+    <div style="overflow-x:auto;border:1px solid var(--line);">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Producto</th>
+            <th>Canal</th>
+            <th class="num">Unidades</th>
+            <th class="num">Ventas</th>
+            <th class="num">% del total</th>
+            <th class="num">% Acumulado</th>
+            <th class="num">80/20</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>© 2026 Bala Di Gala · Hand Detail SA de CV · Todos los derechos reservados</footer>
+
+<!-- Modal captura manual -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Agregar producto</h3>
+    <div class="field">
+      <label>Nombre del producto</label>
+      <input id="fTitle" type="text" placeholder="Ej. Crema hidratante 50ml" required/>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>SKU (opcional)</label>
+        <input id="fSku" type="text" placeholder="BDG-XXX"/>
+      </div>
+      <div class="field">
+        <label>Período</label>
+        <input id="fPeriod" type="text" placeholder="Ej. Abr 2026"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Unidades vendidas</label>
+        <input id="fUnits" type="number" min="0" placeholder="0"/>
+      </div>
+      <div class="field">
+        <label>Ventas totales (MXN)</label>
+        <input id="fRevenue" type="number" min="0" step="0.01" placeholder="0.00"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn accent" id="btnSave" onclick="saveManual()">Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(n)
+const fmtN = n => new Intl.NumberFormat('es-MX').format(n)
+
+let allData = []
+let manualData = {palacio:[], mercadolibre:[]}
+let canalActivo = 'todos'
+let chartInstance = null
+let modalCanal = null
+
+async function loadAll() {
+  document.getElementById('btnRefresh').disabled = true
+  document.getElementById('btnRefresh').innerHTML = '<span class="spin">↻</span> Actualizando'
+  try {
+    const [shopifyRes, manualRes] = await Promise.all([
+      fetch('/api/50m/pareto'),
+      fetch('/api/50m/manual')
+    ])
+    const shopifyJson = await shopifyRes.json()
+    manualData = await manualRes.json()
+    allData = shopifyJson.data || []
+    const ts = shopifyJson.updatedAt ? new Date(shopifyJson.updatedAt).toLocaleString('es-MX') : ''
+    document.getElementById('updateBar').style.display = 'flex'
+    document.getElementById('updateMsg').textContent = `Shopify actualizado: ${ts} · Se refresca automáticamente cada 5 minutos`
+  } catch(e) {
+    console.error(e)
+  }
+  document.getElementById('btnRefresh').disabled = false
+  document.getElementById('btnRefresh').textContent = '↻ Actualizar'
+  document.getElementById('loading').classList.add('hidden')
+  render()
+}
+
+function mergeAll() {
+  const shopify = allData.map(p => ({...p, canal:'shopify'}))
+  const palacio = (manualData.palacio||[]).map(p => ({...p, canal:'palacio'}))
+  const ml = (manualData.mercadolibre||[]).map(p => ({...p, canal:'mercadolibre'}))
+  return [...shopify, ...palacio, ...ml]
+}
+
+function buildPareto(products) {
+  const sorted = [...products].sort((a,b) => b.revenue - a.revenue)
+  const total = sorted.reduce((s,p) => s + p.revenue, 0)
+  let cum = 0, cutoff = 0
+  const result = sorted.map((p,i) => {
+    const share = total > 0 ? p.revenue / total : 0
+    cum += share
+    if (cum - share < 0.8) cutoff = i
+    return {...p, revenueShare: share, cumulativeShare: Math.min(cum,1)}
+  })
+  result.forEach((p,i) => { p.isTop80 = i <= cutoff })
+  return result
+}
+
+function setCanal(c, btn) {
+  canalActivo = c
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  render()
+}
+
+function render() {
+  const all = mergeAll()
+  const filtered = canalActivo === 'todos' ? all : all.filter(p => p.canal === canalActivo)
+  const pareto = buildPareto(filtered)
+
+  const totalRev = pareto.reduce((s,p) => s + p.revenue, 0)
+  const top80 = pareto.filter(p => p.isTop80)
+
+  document.getElementById('kTotal').textContent = fmt(totalRev)
+  document.getElementById('kCount').textContent = fmtN(pareto.length)
+  document.getElementById('kTop').textContent = fmtN(top80.length)
+  document.getElementById('kTopPct').textContent = pareto.length > 0
+    ? `${((top80.length/pareto.length)*100).toFixed(0)}% del catálogo`
+    : 'del catálogo'
+  document.getElementById('kTopRev').textContent = fmt(top80.reduce((s,p) => s+p.revenue, 0))
+
+  renderChart(pareto)
+  renderTable(pareto)
+}
+
+function renderChart(pareto) {
+  const top = pareto.slice(0, 25)
+  const labels = top.map(p => p.title.length > 20 ? p.title.slice(0,20)+'…' : p.title)
+  const revenues = top.map(p => Math.round(p.revenue))
+  const cumulative = top.map(p => +(p.cumulativeShare * 100).toFixed(1))
+
+  if (chartInstance) { chartInstance.destroy() }
+  const ctx = document.getElementById('paretoChart').getContext('2d')
+  chartInstance = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Ventas MXN',
+          data: revenues,
+          backgroundColor: top.map(p => p.isTop80 ? '#B8432A' : '#CBCBC6'),
+          yAxisID: 'y',
+          order: 2
+        },
+        {
+          type: 'line',
+          label: '% Acumulado',
+          data: cumulative,
+          borderColor: '#1C1C1A',
+          backgroundColor: 'transparent',
+          pointRadius: 2,
+          pointBackgroundColor: '#1C1C1A',
+          tension: 0.3,
+          yAxisID: 'y2',
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { font: { family: 'Jost', size: 10 }, color: '#5A5A56' } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.dataset.label === 'Ventas MXN'
+              ? ` ${fmt(ctx.raw)}`
+              : ` ${ctx.raw}%`
+          }
+        },
+        annotation: {
+          annotations: {
+            line80: {
+              type: 'line',
+              yScaleID: 'y2',
+              yMin: 80, yMax: 80,
+              borderColor: '#B8432A',
+              borderWidth: 1,
+              borderDash: [4,4],
+              label: { content: '80%', display: true, position: 'end', color: '#B8432A', font: { size: 9 } }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { font: { family: 'Jost', size: 9 }, color: '#9A9A94', maxRotation: 45 },
+          grid: { color: '#F2F2F0' }
+        },
+        y: {
+          position: 'left',
+          ticks: { font: { family: 'Jost', size: 9 }, color: '#9A9A94', callback: v => `$${(v/1000).toFixed(0)}k` },
+          grid: { color: '#F2F2F0' }
+        },
+        y2: {
+          position: 'right',
+          min: 0, max: 100,
+          ticks: { font: { family: 'Jost', size: 9 }, color: '#9A9A94', callback: v => v+'%' },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  })
+}
+
+function renderTable(pareto) {
+  const tbody = document.getElementById('tableBody')
+  const canalLabel = { shopify:'Shopify', palacio:'Palacio de Hierro', mercadolibre:'Mercado Libre' }
+  const badgeClass = { shopify:'badge-shopify', palacio:'badge-palacio', mercadolibre:'badge-ml' }
+
+  tbody.innerHTML = pareto.map((p, i) => `
+    <tr class="${p.isTop80 ? 'top80' : ''}">
+      <td class="muted">${i+1}</td>
+      <td>
+        <div style="font-weight:500;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</div>
+        ${p.sku ? `<div style="font-size:10px;color:var(--muted)">${p.sku}</div>` : ''}
+      </td>
+      <td><span class="badge ${badgeClass[p.canal]||''}">${canalLabel[p.canal]||p.canal}</span></td>
+      <td class="num">${fmtN(p.units)}</td>
+      <td class="num" style="font-weight:500">${fmt(p.revenue)}</td>
+      <td class="num">${(p.revenueShare*100).toFixed(1)}%</td>
+      <td class="num">
+        <span class="bar-bg"><span class="bar-fill" style="width:${Math.min(p.cumulativeShare*100,100)}%"></span></span>
+        <span style="margin-left:6px">${(p.cumulativeShare*100).toFixed(1)}%</span>
+      </td>
+      <td class="num">
+        ${p.isTop80 ? '<span class="badge badge-top">★ TOP</span>' : '<span style="color:var(--muted)">—</span>'}
+        ${p.canal !== 'shopify' ? `<button onclick="deleteManual('${p.canal}','${p.productId}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;" title="Eliminar">✕</button>` : ''}
+      </td>
+    </tr>
+  `).join('')
+}
+
+// Modal
+function openModal(canal) {
+  modalCanal = canal
+  const labels = {palacio:'Palacio de Hierro', mercadolibre:'Mercado Libre'}
+  document.getElementById('modalTitle').textContent = `Agregar producto · ${labels[canal]}`
+  document.getElementById('fTitle').value = ''
+  document.getElementById('fSku').value = ''
+  document.getElementById('fPeriod').value = ''
+  document.getElementById('fUnits').value = ''
+  document.getElementById('fRevenue').value = ''
+  document.getElementById('modalOverlay').classList.remove('hidden')
+  document.getElementById('fTitle').focus()
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden')
+  modalCanal = null
+}
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal()
+})
+
+async function saveManual() {
+  const title = document.getElementById('fTitle').value.trim()
+  if (!title) { document.getElementById('fTitle').focus(); return }
+  const btn = document.getElementById('btnSave')
+  btn.disabled = true; btn.textContent = 'Guardando…'
+  await fetch('/api/50m/manual', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      canal: modalCanal,
+      productId: `${modalCanal}-${Date.now()}`,
+      title,
+      sku: document.getElementById('fSku').value.trim(),
+      period: document.getElementById('fPeriod').value.trim(),
+      units: parseInt(document.getElementById('fUnits').value) || 0,
+      revenue: parseFloat(document.getElementById('fRevenue').value) || 0
+    })
+  })
+  btn.disabled = false; btn.textContent = 'Guardar producto'
+  closeModal()
+  const manualRes = await fetch('/api/50m/manual')
+  manualData = await manualRes.json()
+  render()
+}
+
+async function deleteManual(canal, productId) {
+  if (!confirm('¿Eliminar este producto?')) return
+  await fetch('/api/50m/manual', {
+    method: 'DELETE',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({canal, productId})
+  })
+  const manualRes = await fetch('/api/50m/manual')
+  manualData = await manualRes.json()
+  render()
+}
+
+// Auto-refresh cada 5 min
+setInterval(loadAll, 5 * 60 * 1000)
+
+// Init
+loadAll()
+</script>
+</body>
+</html>

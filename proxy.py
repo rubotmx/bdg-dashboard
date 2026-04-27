@@ -10,6 +10,10 @@ Endpoints:
   PUT  /admin/users/<id>   — editar usuario (admin)
   DELETE /admin/users/<id> — eliminar usuario (admin)
   GET  /api/shopify        — proxy a Shopify Admin API (requiere sesión)
+  GET  /api/50m/pareto     — análisis Pareto 80/20 últimos 90 días (Shopify)
+  GET  /api/50m/manual     — productos manuales (Palacio, MercadoLibre)
+  POST /api/50m/manual     — guardar producto manual
+  DELETE /api/50m/manual   — eliminar producto manual
 """
 import http.server
 import os
@@ -20,7 +24,7 @@ import sqlite3
 import json
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 PORT         = int(os.environ.get("PORT", 3000))
 DIRECTORY    = os.path.dirname(os.path.abspath(__file__))
@@ -66,6 +70,18 @@ def init_db():
             color      TEXT    NOT NULL DEFAULT '#B8432A',
             active     INTEGER NOT NULL DEFAULT 1,
             created_at TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS manual_products (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            canal      TEXT    NOT NULL,
+            product_id TEXT    NOT NULL,
+            title      TEXT    NOT NULL,
+            sku        TEXT    DEFAULT '',
+            units      INTEGER NOT NULL DEFAULT 0,
+            revenue    REAL    NOT NULL DEFAULT 0,
+            period     TEXT    NOT NULL DEFAULT '',
+            created_at TEXT    NOT NULL,
+            UNIQUE(canal, product_id)
         );
         CREATE TABLE IF NOT EXISTS schedule_events (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,7 +151,11 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
     # ── GET ──
     def do_GET(self):
-        if self.path.startswith("/api/shopify"):
+        if self.path.startswith("/api/50m/pareto"):
+            self._50m_pareto()
+        elif self.path.startswith("/api/50m/manual"):
+            self._50m_manual_get()
+        elif self.path.startswith("/api/shopify"):
             self._proxy_shopify()
         elif self.path.startswith("/auth/me"):
             user = verify_session(self._token())
@@ -180,7 +200,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
     # ── POST ──
     def do_POST(self):
-        if self.path == "/auth/login":
+        if self.path == "/api/50m/manual":
+            self._50m_manual_post()
+        elif self.path == "/auth/login":
             self._login()
         elif self.path == "/auth/register":
             self._register()
@@ -251,7 +273,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
     # ── DELETE ──
     def do_DELETE(self):
-        if self.path.startswith("/admin/users/"):
+        if self.path == "/api/50m/manual":
+            self._50m_manual_delete()
+        elif self.path.startswith("/admin/users/"):
             user = verify_session(self._token())
             if not user or user["role"] != "admin":
                 return self._json(403, {"error": "Acceso denegado"})
@@ -387,6 +411,102 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                 except: pass
             print(f"[bdg] ERROR en _update_user uid={uid}: {e}")
             self._json(500, {"error": str(e)})
+
+    # ── MÓDULO 50M ──
+    def _50m_pareto(self):
+        try:
+            since = (datetime.now(timezone.utc) - timedelta(days=90)).strftime('%Y-%m-%dT%H:%M:%SZ')
+            url = (f"https://{SHOPIFY_STORE}/admin/api/2024-01/orders.json"
+                   f"?status=any&created_at_min={since}&limit=250"
+                   f"&fields=id,line_items,financial_status")
+            products = {}
+            while url:
+                req = urllib.request.Request(url, headers={
+                    "X-Shopify-Access-Token": SHOPIFY_TOKEN,
+                    "Content-Type": "application/json"
+                })
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    data = json.loads(resp.read())
+                    link = resp.headers.get("Link", "")
+                next_url = None
+                if 'rel="next"' in link:
+                    import re
+                    m = re.search(r'<([^>]+)>;\s*rel="next"', link)
+                    if m: next_url = m.group(1)
+                for order in data.get("orders", []):
+                    if order.get("financial_status") == "refunded":
+                        continue
+                    for item in order.get("line_items", []):
+                        pid = str(item.get("product_id", ""))
+                        rev = (float(item.get("price", 0)) - float(item.get("total_discount", 0))) * item.get("quantity", 0)
+                        if pid in products:
+                            products[pid]["units"] += item.get("quantity", 0)
+                            products[pid]["revenue"] += rev
+                        else:
+                            products[pid] = {
+                                "productId": pid,
+                                "title": item.get("title", ""),
+                                "sku": item.get("sku", ""),
+                                "units": item.get("quantity", 0),
+                                "revenue": rev,
+                                "canal": "shopify"
+                            }
+                url = next_url
+            sorted_p = sorted(products.values(), key=lambda x: x["revenue"], reverse=True)
+            total = sum(p["revenue"] for p in sorted_p)
+            cumulative = 0
+            cutoff_idx = 0
+            result = []
+            for i, p in enumerate(sorted_p):
+                share = p["revenue"] / total if total else 0
+                cumulative += share
+                result.append({**p, "revenueShare": share, "cumulativeShare": cumulative})
+                if cumulative <= 0.8:
+                    cutoff_idx = i
+            for i, p in enumerate(result):
+                p["isTop80"] = i <= cutoff_idx
+            self._json(200, {"data": result, "updatedAt": datetime.now(timezone.utc).isoformat()})
+        except Exception as e:
+            print(f"[50m] pareto error: {e}")
+            self._json(500, {"error": str(e)})
+
+    def _50m_manual_get(self):
+        conn = get_conn()
+        rows = conn.execute("SELECT * FROM manual_products ORDER BY revenue DESC").fetchall()
+        conn.close()
+        result = {"palacio": [], "mercadolibre": []}
+        for r in rows:
+            d = dict(r)
+            entry = {"productId": d["product_id"], "title": d["title"], "sku": d["sku"],
+                     "units": d["units"], "revenue": d["revenue"], "canal": d["canal"]}
+            if d["canal"] in result:
+                result[d["canal"]].append(entry)
+        self._json(200, result)
+
+    def _50m_manual_post(self):
+        b = self._body()
+        canal = b.get("canal", "")
+        if canal not in ("palacio", "mercadolibre"):
+            return self._json(400, {"error": "Canal inválido"})
+        conn = get_conn()
+        conn.execute("""
+            INSERT INTO manual_products (canal, product_id, title, sku, units, revenue, period, created_at)
+            VALUES (?,?,?,?,?,?,?,?)
+            ON CONFLICT(canal, product_id) DO UPDATE SET
+              title=excluded.title, sku=excluded.sku,
+              units=excluded.units, revenue=excluded.revenue, period=excluded.period
+        """, (canal, b.get("productId", str(_now())), b.get("title",""), b.get("sku",""),
+              b.get("units", 0), b.get("revenue", 0), b.get("period",""), _now()))
+        conn.commit(); conn.close()
+        self._json(201, {"ok": True})
+
+    def _50m_manual_delete(self):
+        b = self._body()
+        conn = get_conn()
+        conn.execute("DELETE FROM manual_products WHERE canal=? AND product_id=?",
+                     (b.get("canal"), b.get("productId")))
+        conn.commit(); conn.close()
+        self._json(200, {"ok": True})
 
     # ── SHOPIFY PROXY ──
     def _proxy_shopify(self):
