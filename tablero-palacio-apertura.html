@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BDG × Palacio de Hierro — Inventario y Resurtido</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+--bg:#F8F8F7;--surface:#FFFFFF;--surface2:#F2F2F0;--surface3:#E8E8E5;
+--line:#E0E0DC;--line2:#CBCBC6;--carbon:#1C1C1A;--carbon2:#2E2E2B;--carbon3:#444441;
+--text:#1C1C1A;--text2:#5A5A56;--muted:#9A9A94;
+--oxide:#B8432A;--oxide2:#D4573E;--oxide-l:#FAEAE7;--oxide-ll:#F5D0C8;
+--pos:#2D6A3F;--pos-l:#E8F5EC;--neg:#8B2020;--neg-l:#F5EAEA;
+--warn:#7A5C1E;--warn-l:#F5EDD6;--neu:#4A5568;--neu-l:#EDF2F7;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Jost',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding:0 0 48px}
+.topbar{background:var(--carbon);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:8px 28px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:400}
+.topbar .live{display:flex;align-items:center;gap:7px;color:var(--muted)}
+.live-dot{width:6px;height:6px;background:#4ED07A;border-radius:50%;box-shadow:0 0 0 3px #4ED07A22}
+header{display:flex;justify-content:space-between;align-items:flex-end;padding:30px 28px 22px}
+header .sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+header .ttl{font-family:'EB Garamond',serif;font-size:30px;font-weight:500;letter-spacing:-.01em;line-height:1}
+.logo{height:18px;width:auto;filter:brightness(0);display:block;margin-bottom:14px}
+.btns{display:flex;gap:8px}
+.btn{border:1px solid var(--line2);background:var(--surface);color:var(--text);padding:9px 16px;font-family:'Jost';font-size:10px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;font-weight:400}
+.btn.accent{background:var(--oxide);border-color:var(--oxide);color:#fff}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 28px}
+.kpi{background:var(--surface);padding:20px 22px}
+.kpi .lbl{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.kpi .val{font-family:'EB Garamond',serif;font-size:38px;font-weight:500;line-height:1;margin-top:10px;letter-spacing:-.01em}
+.kpi .note{font-size:10.5px;color:var(--text2);margin-top:7px;letter-spacing:.02em}
+.kpi.accent-card{background:var(--carbon);color:#fff}
+.kpi.accent-card .lbl{color:#8a8a86}
+.kpi.accent-card .note{color:#a8a8a4}
+.kpi.oxide-card{background:var(--oxide)}
+.kpi.oxide-card .lbl{color:#f3cabf}
+.kpi.oxide-card .val,.kpi.oxide-card .note{color:#fff}
+
+.sec{margin:34px 28px 0}
+.sec-lbl{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--carbon3);font-weight:500;padding-bottom:12px;border-top:2px solid var(--carbon);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-lbl .hint{font-size:9.5px;letter-spacing:.1em;color:var(--muted);font-weight:300;text-transform:none}
+.g2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:18px}
+.card{background:var(--surface);border:1px solid var(--line);padding:20px 22px}
+.card h3{font-family:'Jost';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--text2);font-weight:500;margin-bottom:16px}
+canvas{max-height:150px!important}
+
+.legend{display:flex;gap:18px;margin-top:14px;font-size:10px;color:var(--text2);letter-spacing:.04em}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;display:inline-block}
+
+.story{display:flex;flex-direction:column;gap:0}
+.story .row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.story .row:last-child{border-bottom:none}
+.story .num{font-family:'EB Garamond',serif;font-size:30px;font-weight:500;width:74px;text-align:right;line-height:1}
+.story .stxt{font-size:11.5px;color:var(--text2);letter-spacing:.02em;line-height:1.35}
+.story .stxt b{color:var(--text);font-weight:500}
+.story .ico{width:30px;text-align:center;font-size:15px}
+
+.tbl-wrap{border:1px solid var(--line);overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+thead th{background:var(--carbon);color:#fff;text-align:right;padding:11px 12px;font-weight:400;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+thead th:first-child{text-align:left}
+tbody td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);font-weight:300;color:var(--text)}
+tbody td:first-child{text-align:left;font-weight:400}
+tbody tr:nth-child(even){background:var(--surface2)}
+tbody tr:hover{background:var(--oxide-l)}
+.mdl{font-weight:500;letter-spacing:.01em}
+.sub-sku{font-size:8.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.val-serif{font-family:'EB Garamond',serif;font-size:15px;font-weight:500}
+.badge{display:inline-block;padding:2px 8px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.b-ok{background:var(--pos-l);color:var(--pos)}
+.b-med{background:var(--warn-l);color:var(--warn)}
+.b-gap{background:var(--neg-l);color:var(--neg)}
+tfoot td{background:var(--surface3);font-weight:500;padding:12px;text-align:right;border-top:2px solid var(--carbon);color:var(--text)}
+tfoot td:first-child{text-align:left;letter-spacing:.14em;text-transform:uppercase;font-size:10px}
+.tnum{font-family:'EB Garamond',serif;font-size:16px;font-weight:500}
+
+.tallabar{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.tallabar:last-child{border-bottom:none}
+.tallabar .t{width:34px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text2);font-weight:500}
+.tallabar .track{flex:1;height:22px;background:var(--surface2);position:relative;display:flex}
+.tallabar .seg{height:100%}
+.tallabar .figs{width:120px;text-align:right;font-size:10.5px;color:var(--text2)}
+.tallabar .figs b{font-family:'EB Garamond',serif;font-size:14px;color:var(--text);font-weight:500}
+
+.callout{background:var(--carbon);color:#fff;padding:22px 26px;margin:18px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.callout .ci .lbl{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:#8a8a86}
+.callout .ci p{font-size:12.5px;line-height:1.5;color:#e4e4e0;margin-top:9px;font-weight:300}
+.callout .ci p b{color:#fff;font-weight:500}
+.callout .ci .big{font-family:'EB Garamond',serif;font-size:26px;color:var(--oxide2);font-weight:500;margin-top:4px}
+
+footer{display:flex;justify-content:space-between;padding:24px 28px 0;margin-top:34px;border-top:1px solid var(--line);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <span>Inventario &amp; Resurtido · Apertura Agosto 2026 · MXN / Unidades</span>
+    <span class="live"><span class="live-dot"></span>Palacio 23 Jun · bodega BDG 17 Jun</span>
+  </div>
+
+  <header>
+    <div>
+      <img class="logo" src="https://baladigala.com/cdn/shop/files/TIPOGRAFIA_0eeef2c9-8447-407e-940f-5d63c2a8467c.webp?v=1737764437&width=610" alt="BALA DI GALA">
+      <div class="ttl">Capacidad de abasto para abrir nuevas tiendas</div>
+      <div class="sub">El Palacio de Hierro · Lectura de piso + bodega BDG disponible</div>
+    </div>
+    <div class="btns">
+      <button class="btn secondary" onclick="window.print()">↓ Exportar</button>
+      <button class="btn accent">↻ En vivo</button>
+    </div>
+  </header>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="lbl">En piso Palacio</div>
+      <div class="val">459</div>
+      <div class="note">pares · 19 modelos · $931K retail</div>
+    </div>
+    <div class="kpi accent-card">
+      <div class="lbl">Listo para resurtir hoy</div>
+      <div class="val">393</div>
+      <div class="note">pares en bodega BDG · disponibilidad inmediata</div>
+    </div>
+    <div class="kpi oxide-card">
+      <div class="lbl">Cobertura de resurtido</div>
+      <div class="val">86%</div>
+      <div class="note">de lo que hay en piso, cubierto desde stock propio</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Gaps a producir</div>
+      <div class="val">6</div>
+      <div class="note">modelos sin reabasto · ya en plan de producción</div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 1: Tallas -->
+  <div class="sec">
+    <div class="sec-lbl">Cobertura por talla · demanda vs piso vs bodega <span class="hint">la talla que se vende, ¿la tenemos lista?</span></div>
+    <div class="g2">
+      <div class="card">
+        <h3>Stock disponible para resurtir, por talla</h3>
+        <div id="tallabars"></div>
+      </div>
+      <div class="card">
+        <h3>Lectura rápida</h3>
+        <div class="story">
+          <div class="row"><div class="ico">✓</div><div class="num" style="width:54px;color:var(--pos)">129</div><div class="stxt"><b>Talla 23</b> — la más profunda en bodega. Cubre con holgura su rotación en piso.</div></div>
+          <div class="row"><div class="ico">✓</div><div class="num" style="width:54px;color:var(--pos)">88</div><div class="stxt"><b>Talla 26</b> — bien abastecida, lista para puntos nuevos.</div></div>
+          <div class="row"><div class="ico">◐</div><div class="num" style="width:54px;color:var(--warn)">72</div><div class="stxt"><b>Talla 27</b> — la más pedida en piso (145 pares); reforzar en próxima corrida.</div></div>
+          <div class="row"><div class="ico">◐</div><div class="num" style="width:54px;color:var(--warn)">45</div><div class="stxt"><b>Talla 25</b> — punto a vigilar; demanda viva, stock medio.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: Modelo por modelo -->
+  <div class="sec">
+    <div class="sec-lbl">Detalle por modelo · qué vende, qué queda, qué resurtimos <span class="hint">verde = cubierto · ámbar = parcial · rojo = a producir</span></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Modelo</th>
+            <th>Vendido</th>
+            <th>En piso</th>
+            <th>Disp. resurtir</th>
+            <th>T23</th><th>T24</th><th>T25</th><th>T26</th><th>T27</th>
+            <th>Estatus</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td>Total</td>
+            <td><span class="tnum">66</span></td>
+            <td><span class="tnum">459</span></td>
+            <td><span class="tnum">393</span></td>
+            <td colspan="5" style="text-align:center;color:var(--text2);font-weight:300;font-size:10px;letter-spacing:.1em">393 pares en bodega BDG listos para distribución</td>
+            <td><span class="badge b-ok">86% cubierto</span></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Callout de cierre -->
+  <div class="sec">
+    <div class="sec-lbl">Compromiso de abasto para la apertura</div>
+    <div class="callout">
+      <div class="ci">
+        <div class="lbl">Listo hoy mismo</div>
+        <div class="big">393 pares</div>
+        <p>Disponibles en bodega BDG para distribuir a las nuevas tiendas desde el día uno. <b>Penny, Monarch, Bala Black y Penny Brown</b> con stock profundo en todas las tallas.</p>
+      </div>
+      <div class="ci">
+        <div class="lbl">En producción para agosto</div>
+        <div class="big">6 modelos</div>
+        <p>Gaps identificados: <b>Tyr, Calf, Legacy Taupe, Hudson Black, Fenix, Dallas</b>. Ya en plan de corrida con FabricaH para llegar antes de la apertura — sin descubrir el piso.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Bala Di Gala · Hand Detail SA de CV</span>
+    <span>Fuente: Reporte EPH + Shopify en vivo · MXN</span>
+  </footer>
+</div>
+
+<script>
+const DATA = {"rows": [{"modelo": "Penny Taupe Clogs", "sku": "BDGPENTAU", "vend": 11, "piso": 18, "pisoRtl": 30884, "resurtir": 135, "sh_tallas": {"23": 61, "24": 1, "25": 4, "26": 44, "27": 25}, "gap": false}, {"modelo": "Legacy Studs", "sku": "BDGLEGST", "vend": 10, "piso": 32, "pisoRtl": 0, "resurtir": 16, "sh_tallas": {"23": 7, "24": 0, "25": 0, "26": 1, "27": 8}, "gap": false}, {"modelo": "Hudson Black", "sku": "BDGHUDBLA", "vend": 6, "piso": 30, "pisoRtl": 0, "resurtir": 4, "sh_tallas": {"23": 0, "24": 0, "25": 1, "26": 3, "27": 0}, "gap": false}, {"modelo": "Fenix Chocolate", "sku": "BDGFENCH", "vend": 6, "piso": 37, "pisoRtl": 159164, "resurtir": 5, "sh_tallas": {"23": 3, "24": 0, "25": 1, "26": 0, "27": 1}, "gap": false}, {"modelo": "Penny Black Clogs", "sku": "BDGPENBLA", "vend": 6, "piso": 24, "pisoRtl": 41176, "resurtir": 10, "sh_tallas": {"24": 7, "25": 3}, "gap": false}, {"modelo": "Monarch Cherry Red", "sku": "BDGMONRED", "vend": 4, "piso": 51, "pisoRtl": 0, "resurtir": 65, "sh_tallas": {"23": 11, "24": 20, "25": 9, "26": 6, "27": 19}, "gap": false}, {"modelo": "Bala Black", "sku": "BDGBABLA", "vend": 3, "piso": 27, "pisoRtl": 116145, "resurtir": 28, "sh_tallas": {"23": 0, "24": 1, "25": 9, "26": 11, "27": 7}, "gap": false}, {"modelo": "Dallas Camel", "sku": "BDGDALLCA", "vend": 4, "piso": 23, "pisoRtl": 98942, "resurtir": 9, "sh_tallas": {"23": 3, "24": 0, "25": 0, "26": 0, "27": 6}, "gap": false}, {"modelo": "Penny Cliniqué", "sku": "BDGPENCLI", "vend": 6, "piso": 30, "pisoRtl": 51468, "resurtir": 10, "sh_tallas": {"24": 7, "25": 3}, "gap": false}, {"modelo": "Tyr", "sku": "BDGTYR", "vend": 2, "piso": 44, "pisoRtl": 151345, "resurtir": 0, "sh_tallas": {}, "gap": true}, {"modelo": "Penny Brown Clogs", "sku": "BDGPENBR", "vend": 3, "piso": 23, "pisoRtl": 0, "resurtir": 83, "sh_tallas": {"23": 30, "24": 19, "25": 13, "26": 20, "27": 1}, "gap": false}, {"modelo": "Legacy Taupe", "sku": "BDGLEGTAU", "vend": 3, "piso": 45, "pisoRtl": 127621, "resurtir": 8, "sh_tallas": {"23": 5, "24": 1, "25": 0, "26": 0, "27": 2}, "gap": false}, {"modelo": "LSI", "sku": "BDGLSI", "vend": 0, "piso": 9, "pisoRtl": 0, "resurtir": 0, "sh_tallas": {}, "gap": true}, {"modelo": "MITS", "sku": "BDGMITS", "vend": 0, "piso": 1, "pisoRtl": 0, "resurtir": 0, "sh_tallas": {}, "gap": true}, {"modelo": "Flux Baby Blue", "sku": "BDGFLUBBLU", "vend": 0, "piso": 8, "pisoRtl": 16483, "resurtir": 0, "sh_tallas": {}, "gap": true}, {"modelo": "Hudson SCC", "sku": "BDGHUDSCC", "vend": 1, "piso": 3, "pisoRtl": 9027, "resurtir": 0, "sh_tallas": {}, "gap": true}, {"modelo": "Calf Pony", "sku": "BDGCALF", "vend": 2, "piso": 23, "pisoRtl": 0, "resurtir": 13, "sh_tallas": {"23": 3, "24": 3, "25": 2, "26": 3, "27": 2}, "gap": false}, {"modelo": "Ren Black", "sku": "BDGRENBLA", "vend": 0, "piso": 1, "pisoRtl": 0, "resurtir": 0, "sh_tallas": {}, "gap": true}, {"modelo": "Dallas Black", "sku": "BDGDALLBL", "vend": -1, "piso": 30, "pisoRtl": 129052, "resurtir": 7, "sh_tallas": {"23": 6, "24": 0, "25": 0, "26": 0, "27": 1}, "gap": false}], "tot": {"vend": 66, "piso": 459, "resurtir": 393, "pisoRtl": 931307, "vtaRtl": 140916}};
+const TALLAS = {"dem": {"23": 13, "24": 17, "25": 13, "26": 12, "27": 11}, "piso": {"23": 114, "24": 54, "25": 59, "26": 87, "27": 145}, "resurtir": {"23": 129, "24": 59, "25": 45, "26": 88, "27": 72}};
+
+// ---- Tabla modelo por modelo ----
+const tb = document.getElementById('tbody');
+DATA.rows.forEach(r=>{
+  let badge, cls;
+  if(r.gap){ badge='A producir'; cls='b-gap'; }
+  else if(r.resurtir>=r.piso){ badge='Cubierto'; cls='b-ok'; }
+  else { badge='Parcial'; cls='b-med'; }
+  const t = r.sh_tallas||{};
+  const cell = s => { const v=t[s]; if(v===undefined) return '<td style="color:var(--line2)">—</td>'; return `<td>${v}</td>`; };
+  const vend = r.vend<0?`<span style="color:var(--neg)">${r.vend}</span>`:r.vend;
+  tb.insertAdjacentHTML('beforeend',`
+    <tr>
+      <td><span class="mdl">${r.modelo}</span><br><span class="sub-sku">${r.sku}</span></td>
+      <td>${vend}</td>
+      <td><span class="val-serif">${r.piso}</span></td>
+      <td><span class="val-serif" style="color:${r.gap?'var(--neg)':'var(--text)'}">${r.resurtir}</span></td>
+      ${cell('23')}${cell('24')}${cell('25')}${cell('26')}${cell('27')}
+      <td><span class="badge ${cls}">${badge}</span></td>
+    </tr>`);
+});
+
+// ---- Barras de tallas ----
+const tbWrap = document.getElementById('tallabars');
+const sizes=['23','24','25','26','27'];
+const maxv = Math.max(...sizes.map(s=>TALLAS.resurtir[s]||0));
+sizes.forEach(s=>{
+  const resurtir = TALLAS.resurtir[s]||0;
+  const piso = TALLAS.piso[s]||0;
+  const w = (resurtir/maxv*100).toFixed(1);
+  const color = resurtir>=piso ? 'var(--pos)' : (resurtir>=piso*0.5?'var(--oxide)':'var(--warn)');
+  tbWrap.insertAdjacentHTML('beforeend',`
+    <div class="tallabar">
+      <div class="t">T${s}</div>
+      <div class="track"><div class="seg" style="width:${w}%;background:${color}"></div></div>
+      <div class="figs"><b>${resurtir}</b> dispo · ${piso} en piso</div>
+    </div>`);
+});
+</script>
+</body>
+</html>
